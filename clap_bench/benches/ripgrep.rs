@@ -3,234 +3,190 @@
 //!
 //! CLI used is adapted from ripgrep 48a8a3a691220f9e5b2b08f4051abe8655ea7e8a
 
-#![allow(elided_lifetimes_in_paths)] // needed for divan
+use std::{collections::HashMap, hint::black_box};
 
-use std::collections::HashMap;
-
-use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgAction, Command};
 use lazy_static::lazy_static;
 
-mod build {
-    use super::{app_long, app_short, Command};
-
-    #[divan::bench]
-    fn short_help() -> Command {
-        app_short()
-    }
-
-    #[divan::bench]
-    fn long_help() -> Command {
-        app_long()
-    }
-}
-
-mod render_help {
-    use super::{app_long, app_short};
-
-    #[divan::bench]
-    fn short_help(bencher: divan::Bencher) {
-        let mut cmd = app_short();
-        bencher.bench_local(|| cmd.render_help().to_string());
-    }
-
-    #[divan::bench]
-    fn long_help(bencher: divan::Bencher) {
-        let mut cmd = app_long();
-        bencher.bench_local(|| cmd.render_help().to_string());
-    }
-}
-
-mod startup {
-    use super::{app_short, ArgMatches};
-
-    #[divan::bench]
-    fn simple() -> ArgMatches {
-        app_short().get_matches_from(vec!["rg", "pat"])
-    }
-
-    #[divan::bench]
-    fn complex() -> ArgMatches {
-        app_short().get_matches_from(vec![
-            "rg",
-            "pat",
-            "-cFlN",
-            "-pqr=some",
-            "--null",
-            "--no-filename",
-            "--no-messages",
-            "-SH",
-            "-C5",
-            "--follow",
-            "-e some",
-        ])
-    }
-
-    #[divan::bench]
-    fn xargs() -> ArgMatches {
-        app_short().get_matches_from(vec![
-            "rg", "pat", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
-            "some", "some", "some", "some", "some", "some", "some",
-        ])
-    }
-}
+#[allow(unreachable_pub)]
+pub const ARGS: &[&[&str]] = black_box(&[
+    &["rg", "pat"],
+    &[
+        "rg",
+        "pat",
+        "-cFlN",
+        "-pqr=some",
+        "--null",
+        "--no-filename",
+        "--no-messages",
+        "-SH",
+        "-C5",
+        "--follow",
+        "-e some",
+    ],
+    &[
+        "rg", "pat", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some", "some", "some", "some", "some",
+        "some", "some", "some", "some", "some", "some", "some",
+    ],
+]);
 
 const ABOUT: &str = "
 ripgrep (rg) recursively searches your current directory for a regex pattern.
@@ -263,13 +219,15 @@ OPTIONS:
 {options}";
 
 /// Build a clap application with short help strings.
-fn app_short() -> Command {
-    cmd(false, |k| USAGES[k].short)
+#[allow(unreachable_pub)]
+pub fn app_short() -> Command {
+    black_box(cmd(false, |k| USAGES[k].short))
 }
 
 /// Build a clap application with long help strings.
-fn app_long() -> Command {
-    cmd(true, |k| USAGES[k].long)
+#[allow(unreachable_pub)]
+pub fn app_long() -> Command {
+    black_box(cmd(true, |k| USAGES[k].long))
 }
 
 /// Build a clap application parameterized by usage strings.
@@ -286,175 +244,177 @@ where
     let arg = |name| Arg::new(name).help(doc(name));
     let flag = |name| arg(name).long(name).action(ArgAction::SetTrue);
 
-    Command::new("ripgrep")
-        .author("BurntSushi") // simulating since it's only a bench
-        .version("0.4.0") // Simulating
-        .about(ABOUT)
-        .max_term_width(100)
-        .override_usage(USAGE)
-        .help_template(TEMPLATE)
-        // Handle help/version manually to make their output formatting
-        // consistent with short/long views.
-        .disable_help_flag(true)
-        .disable_version_flag(true)
-        .arg(arg("help-short").short('h'))
-        .arg(flag("help"))
-        .arg(flag("version").short('V'))
-        // First, set up primary positional/flag arguments.
-        .arg(arg("pattern").required_unless_present_any([
-            "file",
-            "files",
-            "help-short",
-            "help",
-            "regexp",
-            "type-list",
-            "version",
-        ]))
-        .arg(arg("path").num_args(1..))
-        .arg(
-            flag("regexp")
-                .short('e')
-                .allow_hyphen_values(true)
-                .action(ArgAction::Append)
-                .value_name("pattern"),
-        )
-        .arg(
-            flag("files")
-                // This should also conflict with `pattern`, but the first file
-                // path will actually be in `pattern`.
-                .conflicts_with_all(["file", "regexp", "type-list"]),
-        )
-        .arg(flag("type-list").conflicts_with_all(["file", "files", "pattern", "regexp"]))
-        // Second, set up common flags.
-        .arg(flag("text").short('a'))
-        .arg(flag("count").short('c'))
-        .arg(
-            flag("color")
-                .value_name("WHEN")
-                .action(ArgAction::Set)
-                .hide_possible_values(true)
-                .value_parser(["never", "auto", "always", "ansi"]),
-        )
-        .arg(flag("colors").value_name("SPEC").action(ArgAction::Append))
-        .arg(flag("fixed-strings").short('F'))
-        .arg(
-            flag("glob")
-                .short('g')
-                .action(ArgAction::Append)
-                .value_name("GLOB"),
-        )
-        .arg(flag("ignore-case").short('i'))
-        .arg(flag("line-number").short('n'))
-        .arg(flag("no-line-number").short('N'))
-        .arg(flag("quiet").short('q'))
-        .arg(
-            flag("type")
-                .short('t')
-                .action(ArgAction::Append)
-                .value_name("TYPE"),
-        )
-        .arg(
-            flag("type-not")
-                .short('T')
-                .action(ArgAction::Append)
-                .value_name("TYPE"),
-        )
-        .arg(flag("unrestricted").short('u').action(ArgAction::Append))
-        .arg(flag("invert-match").short('v'))
-        .arg(flag("word-regexp").short('w'))
-        // Third, set up less common flags.
-        .arg(
-            flag("after-context")
-                .short('A')
-                .action(ArgAction::Set)
-                .value_name("NUM")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(
-            flag("before-context")
-                .short('B')
-                .action(ArgAction::Set)
-                .value_name("NUM")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(
-            flag("context")
-                .short('C')
-                .action(ArgAction::Set)
-                .value_name("NUM")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(flag("column"))
-        .arg(flag("context-separator").value_name("SEPARATOR"))
-        .arg(flag("debug"))
-        .arg(
-            flag("file")
-                .short('f')
-                .value_name("FILE")
-                .action(ArgAction::Append),
-        )
-        .arg(flag("files-with-matches").short('l'))
-        .arg(flag("files-without-match"))
-        .arg(flag("with-filename").short('H'))
-        .arg(flag("no-filename"))
-        .arg(flag("heading").overrides_with("no-heading"))
-        .arg(flag("no-heading").overrides_with("heading"))
-        .arg(flag("hidden"))
-        .arg(
-            flag("ignore-file")
-                .value_name("FILE")
-                .action(ArgAction::Append),
-        )
-        .arg(flag("follow").short('L'))
-        .arg(
-            flag("max-count")
-                .short('m')
-                .action(ArgAction::Set)
-                .value_name("NUM")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(
-            flag("maxdepth")
-                .action(ArgAction::Set)
-                .value_name("NUM")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(flag("mmap"))
-        .arg(flag("no-messages"))
-        .arg(flag("no-mmap"))
-        .arg(flag("no-ignore"))
-        .arg(flag("no-ignore-parent"))
-        .arg(flag("no-ignore-vcs"))
-        .arg(flag("null"))
-        .arg(flag("path-separator").value_name("SEPARATOR"))
-        .arg(flag("pretty").short('p'))
-        .arg(
-            flag("replace")
-                .short('r')
-                .action(ArgAction::Set)
-                .value_name("ARG"),
-        )
-        .arg(flag("case-sensitive").short('s'))
-        .arg(flag("smart-case").short('S'))
-        .arg(flag("sort-files"))
-        .arg(
-            flag("threads")
-                .short('j')
-                .action(ArgAction::Set)
-                .value_name("ARG")
-                .value_parser(value_parser!(usize)),
-        )
-        .arg(flag("vimgrep"))
-        .arg(
-            flag("type-add")
-                .value_name("TYPE")
-                .action(ArgAction::Append),
-        )
-        .arg(
-            flag("type-clear")
-                .value_name("TYPE")
-                .action(ArgAction::Append),
-        )
+    black_box(
+        Command::new("ripgrep")
+            .author("BurntSushi") // simulating since it's only a bench
+            .version("0.4.0") // Simulating
+            .about(ABOUT)
+            .max_term_width(100)
+            .override_usage(USAGE)
+            .help_template(TEMPLATE)
+            // Handle help/version manually to make their output formatting
+            // consistent with short/long views.
+            .disable_help_flag(true)
+            .disable_version_flag(true)
+            .arg(arg("help-short").short('h'))
+            .arg(flag("help"))
+            .arg(flag("version").short('V'))
+            // First, set up primary positional/flag arguments.
+            .arg(arg("pattern").required_unless_present_any([
+                "file",
+                "files",
+                "help-short",
+                "help",
+                "regexp",
+                "type-list",
+                "version",
+            ]))
+            .arg(arg("path").num_args(1..))
+            .arg(
+                flag("regexp")
+                    .short('e')
+                    .allow_hyphen_values(true)
+                    .action(ArgAction::Append)
+                    .value_name("pattern"),
+            )
+            .arg(
+                flag("files")
+                    // This should also conflict with `pattern`, but the first file
+                    // path will actually be in `pattern`.
+                    .conflicts_with_all(["file", "regexp", "type-list"]),
+            )
+            .arg(flag("type-list").conflicts_with_all(["file", "files", "pattern", "regexp"]))
+            // Second, set up common flags.
+            .arg(flag("text").short('a'))
+            .arg(flag("count").short('c'))
+            .arg(
+                flag("color")
+                    .value_name("WHEN")
+                    .action(ArgAction::Set)
+                    .hide_possible_values(true)
+                    .value_parser(["never", "auto", "always", "ansi"]),
+            )
+            .arg(flag("colors").value_name("SPEC").action(ArgAction::Append))
+            .arg(flag("fixed-strings").short('F'))
+            .arg(
+                flag("glob")
+                    .short('g')
+                    .action(ArgAction::Append)
+                    .value_name("GLOB"),
+            )
+            .arg(flag("ignore-case").short('i'))
+            .arg(flag("line-number").short('n'))
+            .arg(flag("no-line-number").short('N'))
+            .arg(flag("quiet").short('q'))
+            .arg(
+                flag("type")
+                    .short('t')
+                    .action(ArgAction::Append)
+                    .value_name("TYPE"),
+            )
+            .arg(
+                flag("type-not")
+                    .short('T')
+                    .action(ArgAction::Append)
+                    .value_name("TYPE"),
+            )
+            .arg(flag("unrestricted").short('u').action(ArgAction::Append))
+            .arg(flag("invert-match").short('v'))
+            .arg(flag("word-regexp").short('w'))
+            // Third, set up less common flags.
+            .arg(
+                flag("after-context")
+                    .short('A')
+                    .action(ArgAction::Set)
+                    .value_name("NUM")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(
+                flag("before-context")
+                    .short('B')
+                    .action(ArgAction::Set)
+                    .value_name("NUM")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(
+                flag("context")
+                    .short('C')
+                    .action(ArgAction::Set)
+                    .value_name("NUM")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(flag("column"))
+            .arg(flag("context-separator").value_name("SEPARATOR"))
+            .arg(flag("debug"))
+            .arg(
+                flag("file")
+                    .short('f')
+                    .value_name("FILE")
+                    .action(ArgAction::Append),
+            )
+            .arg(flag("files-with-matches").short('l'))
+            .arg(flag("files-without-match"))
+            .arg(flag("with-filename").short('H'))
+            .arg(flag("no-filename"))
+            .arg(flag("heading").overrides_with("no-heading"))
+            .arg(flag("no-heading").overrides_with("heading"))
+            .arg(flag("hidden"))
+            .arg(
+                flag("ignore-file")
+                    .value_name("FILE")
+                    .action(ArgAction::Append),
+            )
+            .arg(flag("follow").short('L'))
+            .arg(
+                flag("max-count")
+                    .short('m')
+                    .action(ArgAction::Set)
+                    .value_name("NUM")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(
+                flag("maxdepth")
+                    .action(ArgAction::Set)
+                    .value_name("NUM")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(flag("mmap"))
+            .arg(flag("no-messages"))
+            .arg(flag("no-mmap"))
+            .arg(flag("no-ignore"))
+            .arg(flag("no-ignore-parent"))
+            .arg(flag("no-ignore-vcs"))
+            .arg(flag("null"))
+            .arg(flag("path-separator").value_name("SEPARATOR"))
+            .arg(flag("pretty").short('p'))
+            .arg(
+                flag("replace")
+                    .short('r')
+                    .action(ArgAction::Set)
+                    .value_name("ARG"),
+            )
+            .arg(flag("case-sensitive").short('s'))
+            .arg(flag("smart-case").short('S'))
+            .arg(flag("sort-files"))
+            .arg(
+                flag("threads")
+                    .short('j')
+                    .action(ArgAction::Set)
+                    .value_name("ARG")
+                    .value_parser(value_parser!(usize)),
+            )
+            .arg(flag("vimgrep"))
+            .arg(
+                flag("type-add")
+                    .value_name("TYPE")
+                    .action(ArgAction::Append),
+            )
+            .arg(
+                flag("type-clear")
+                    .value_name("TYPE")
+                    .action(ArgAction::Append),
+            ),
+    )
 }
 
 struct Usage {
@@ -915,8 +875,4 @@ lazy_static! {
 
         h
     };
-}
-
-fn main() {
-    divan::main();
 }

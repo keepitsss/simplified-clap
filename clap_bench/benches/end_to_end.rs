@@ -7,12 +7,15 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 mod complex;
 mod empty;
+mod ripgrep;
 
 fn build(c: &mut Criterion) {
     c.bench_function("build args", |b| {
         b.iter(|| {
             complex::create_app();
             empty::create_app();
+            ripgrep::app_short();
+            ripgrep::app_long();
         });
     });
 }
@@ -26,6 +29,12 @@ fn startup(c: &mut Criterion) {
             for args in empty::ARGS {
                 empty::create_app().get_matches_from(black_box(*args));
             }
+            for args in ripgrep::ARGS {
+                ripgrep::app_short().get_matches_from(black_box(*args));
+            }
+            for args in ripgrep::ARGS {
+                ripgrep::app_long().get_matches_from(black_box(*args));
+            }
         });
     });
 }
@@ -35,6 +44,8 @@ fn render_help(c: &mut Criterion) {
         b.iter(|| {
             complex::create_app().render_help().to_string();
             empty::create_app().render_help().to_string();
+            ripgrep::app_long().render_help().to_string();
+            ripgrep::app_short().render_help().to_string();
         });
     });
 }
