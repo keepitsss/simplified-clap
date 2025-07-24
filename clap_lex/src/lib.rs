@@ -129,31 +129,14 @@ pub struct RawArgs {
 }
 
 impl RawArgs {
-    //// Create an argument list to parse
-    ///
-    /// <div class="warning">
-    ///
-    /// **NOTE:** The argument returned will be the current binary.
-    ///
-    /// </div>
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::path::PathBuf;
-    /// let raw = clap_lex::RawArgs::from_args();
-    /// let mut cursor = raw.cursor();
-    /// let _bin = raw.next_os(&mut cursor);
-    ///
-    /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
-    /// println!("{paths:?}");
-    /// ```
+    /// Deprecated
+    #[deprecated = "use RawArgs::from(std::env::args_os()) instead"]
     pub fn from_args() -> Self {
-        Self::from(std::env::args_os())
+        unreachable!()
     }
 
-    #[deprecated = "use from function instead"]
     /// Deprecated
+    #[deprecated = "use from function instead"]
     pub fn new(_args: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
         unreachable!()
     }
