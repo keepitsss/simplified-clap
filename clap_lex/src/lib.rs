@@ -122,7 +122,7 @@ pub use std::io::SeekFrom;
 
 pub use ext::OsStrExt;
 
-/// Command-line arguments
+/// Command-line arguments wrapper
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct RawArgs {
     items: Vec<OsString>,
@@ -149,25 +149,13 @@ impl RawArgs {
     /// println!("{paths:?}");
     /// ```
     pub fn from_args() -> Self {
-        Self::new(std::env::args_os())
+        Self::from(std::env::args_os())
     }
 
-    //// Create an argument list to parse
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::path::PathBuf;
-    /// let raw = clap_lex::RawArgs::new(["bin", "foo.txt"]);
-    /// let mut cursor = raw.cursor();
-    /// let _bin = raw.next_os(&mut cursor);
-    ///
-    /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
-    /// println!("{paths:?}");
-    /// ```
-    pub fn new(iter: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
-        let iter = iter.into_iter();
-        Self::from(iter)
+    #[deprecated = "use from function instead"]
+    /// Deprecated
+    pub fn new(_args: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
+        unreachable!()
     }
 
     /// Advance the cursor, returning the next [`ParsedArg`]
@@ -238,12 +226,12 @@ impl RawArgs {
 
 impl<I, T> From<I> for RawArgs
 where
-    I: Iterator<Item = T>,
+    I: IntoIterator<Item = T>,
     T: Into<OsString>,
 {
     fn from(val: I) -> Self {
         Self {
-            items: val.map(|x| x.into()).collect(),
+            items: val.into_iter().map(|x| x.into()).collect(),
         }
     }
 }

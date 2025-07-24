@@ -1,6 +1,6 @@
 #[test]
 fn insert() {
-    let mut raw = clap_lex::RawArgs::new(["bin", "a", "b", "c"]);
+    let mut raw = clap_lex::RawArgs::from(["bin", "a", "b", "c"]);
     let mut cursor = 0;
 
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));

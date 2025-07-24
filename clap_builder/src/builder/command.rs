@@ -804,7 +804,7 @@ impl Command {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let mut raw_args = clap_lex::RawArgs::new(itr);
+        let mut raw_args = clap_lex::RawArgs::from(itr);
         let mut cursor = 0;
 
         if self.settings.is_set(AppSettings::Multicall) {
