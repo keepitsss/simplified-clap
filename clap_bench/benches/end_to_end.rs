@@ -1,15 +1,7 @@
-use std::hint::black_box;
+use std::{hint::black_box, time::Duration};
 
+use clap_bench::*;
 use criterion::{criterion_group, criterion_main, Criterion};
-
-// use std::hint::black_box;
-// use clap::{arg, Command};
-
-mod complex;
-mod empty;
-mod ripgrep;
-mod rustup;
-mod simple;
 
 fn build(c: &mut Criterion) {
     c.bench_function("build args", |b| {
@@ -62,5 +54,9 @@ fn render_help(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, startup, render_help, build);
+criterion_group!(
+    name = benches;
+    config = Criterion::default().measurement_time(Duration::from_secs(10));
+    targets = startup, render_help, build
+);
 criterion_main!(benches);

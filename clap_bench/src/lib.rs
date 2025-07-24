@@ -1,4 +1,5 @@
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![forbid(unsafe_code)]
-#![warn(clippy::print_stderr)]
-#![warn(clippy::print_stdout)]
+pub mod complex;
+pub mod empty;
+pub mod ripgrep;
+pub mod rustup;
+pub mod simple;
