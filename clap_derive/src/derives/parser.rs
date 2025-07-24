@@ -14,17 +14,15 @@
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Ident;
-use syn::Variant;
 use syn::{
-    self, punctuated::Punctuated, token::Comma, Data, DataStruct, DeriveInput, Field, Fields,
-    Generics,
+    self, Data, DataStruct, DeriveInput, Field, Fields, Generics, Ident, Variant,
+    punctuated::Punctuated, token::Comma,
 };
 
-use crate::derives::args::collect_args_fields;
-use crate::derives::{args, into_app, subcommand};
-use crate::item::Item;
-use crate::item::Name;
+use crate::{
+    derives::{args, args::collect_args_fields, into_app, subcommand},
+    item::{Item, Name},
+};
 
 pub(crate) fn derive_parser(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
     let ident = &input.ident;

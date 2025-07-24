@@ -16,12 +16,16 @@ use std::env;
 
 use heck::{ToKebabCase, ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{self, Span, TokenStream};
-use quote::{format_ident, quote, quote_spanned, ToTokens};
-use syn::DeriveInput;
-use syn::{self, ext::IdentExt, spanned::Spanned, Attribute, Field, Ident, LitStr, Type, Variant};
+use quote::{ToTokens, format_ident, quote, quote_spanned};
+use syn::{
+    self, Attribute, DeriveInput, Field, Ident, LitStr, Type, Variant, ext::IdentExt,
+    spanned::Spanned,
+};
 
-use crate::attr::{AttrKind, AttrValue, ClapAttr, MagicAttrName};
-use crate::utils::{extract_doc_comment, format_doc_comment, inner_type, is_simple_ty, Sp, Ty};
+use crate::{
+    attr::{AttrKind, AttrValue, ClapAttr, MagicAttrName},
+    utils::{Sp, Ty, extract_doc_comment, format_doc_comment, inner_type, is_simple_ty},
+};
 
 /// Default casing style for generated arguments.
 pub(crate) const DEFAULT_CASING: CasingStyle = CasingStyle::Kebab;
@@ -1260,7 +1264,7 @@ impl Method {
 
 impl ToTokens for Method {
     fn to_tokens(&self, ts: &mut TokenStream) {
-        let Method { ref name, ref args } = self;
+        let Method { name, args } = self;
 
         let tokens = quote!( .#name(#args) );
 

@@ -11,9 +11,9 @@ use std::{
 #[cfg(debug_assertions)]
 use crate::builder::Str;
 use crate::{
+    INTERNAL_ERROR_MSG,
     parser::{MatchedArg, MatchesError, ValueSource},
     util::{AnyValue, AnyValueId, FlatMap, Id},
-    INTERNAL_ERROR_MSG,
 };
 
 /// Container for parse results.
@@ -1342,10 +1342,10 @@ impl ArgMatches {
             }
         }
 
-        if let Some(ref sc) = self.subcommand {
-            if sc.name == name {
-                return Some(sc);
-            }
+        if let Some(ref sc) = self.subcommand
+            && sc.name == name
+        {
+            return Some(sc);
         }
 
         None

@@ -14,12 +14,13 @@
 
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned};
-use syn::{spanned::Spanned, Data, DeriveInput, FieldsUnnamed, Generics, Variant};
+use syn::{Data, DeriveInput, FieldsUnnamed, Generics, Variant, spanned::Spanned};
 
-use crate::derives::args;
-use crate::derives::args::collect_args_fields;
-use crate::item::{Item, Kind, Name};
-use crate::utils::{is_simple_ty, subty_if_name};
+use crate::{
+    derives::{args, args::collect_args_fields},
+    item::{Item, Kind, Name},
+    utils::{is_simple_ty, subty_if_name},
+};
 
 pub(crate) fn derive_subcommand(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
     let ident = &input.ident;
@@ -609,7 +610,7 @@ fn gen_update_from_arg_matches(variants: &[(&Variant, Item)]) -> Result<TokenStr
             Unnamed(ref fields) => {
                 if fields.unnamed.len() == 1 {
                     (
-                        quote!((ref mut __clap_arg)),
+                        quote!((__clap_arg)),
                         quote!(clap::FromArgMatches::update_from_arg_matches_mut(
                             __clap_arg,
                             __clap_arg_matches

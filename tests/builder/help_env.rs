@@ -80,7 +80,9 @@ Options:
 
 #[test]
 fn hide_env() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -98,7 +100,9 @@ fn hide_env() {
 
 #[test]
 fn show_env() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -115,7 +119,9 @@ fn show_env() {
 
 #[test]
 fn hide_env_vals() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -133,7 +139,9 @@ fn hide_env_vals() {
 
 #[test]
 fn show_env_vals() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -150,7 +158,9 @@ fn show_env_vals() {
 
 #[test]
 fn hide_env_flag() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -167,7 +177,9 @@ fn hide_env_flag() {
 
 #[test]
 fn show_env_flag() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -183,7 +195,9 @@ fn show_env_flag() {
 
 #[test]
 fn hide_env_vals_flag() {
-    env::set_var("ENVVAR", "MYVAL");
+    unsafe {
+        env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")
@@ -200,7 +214,10 @@ fn hide_env_vals_flag() {
 
 #[test]
 fn show_env_vals_flag() {
+    unsafe {
+
     env::set_var("ENVVAR", "MYVAL");
+    }
 
     let cmd = Command::new("ctest").version("0.1").arg(
         Arg::new("cafe")

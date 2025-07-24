@@ -21,8 +21,7 @@
 #![warn(clippy::print_stdout)]
 
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
-use syn::{Data, DataStruct, Fields};
+use syn::{Data, DataStruct, DeriveInput, Fields, parse_macro_input};
 
 #[macro_use]
 mod macros;
@@ -58,7 +57,7 @@ pub fn parser(input: TokenStream) -> TokenStream {
         .unwrap_or_else(|err| {
             let specific_dummy = match input.data {
                 Data::Struct(DataStruct {
-                    fields: Fields::Named(ref _fields),
+                    fields: Fields::Named(_fields),
                     ..
                 }) => Some(dummies::args(&input.ident)),
                 Data::Struct(DataStruct {

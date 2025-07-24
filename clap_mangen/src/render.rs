@@ -99,12 +99,11 @@ pub(crate) fn options(roff: &mut Roff, items: &[&Arg]) {
             (None, None) => vec![],
         };
 
-        if opt.get_num_args().expect("built").takes_values() {
-            if let Some(value) = &opt.get_value_names() {
+        if opt.get_num_args().expect("built").takes_values()
+            && let Some(value) = &opt.get_value_names() {
                 header.push(roman("="));
                 header.push(italic(value.join(" ")));
             }
-        }
 
         if let Some(defs) = option_default_values(opt) {
             header.push(roman(" "));

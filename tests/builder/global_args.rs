@@ -1,4 +1,4 @@
-use clap::{arg, Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, Command, arg};
 
 #[test]
 fn issue_1076() {
@@ -101,11 +101,12 @@ fn global_arg_available_in_subcommand() {
         .unwrap();
 
     assert!(*m.get_one::<bool>("global").expect("defaulted by clap"));
-    assert!(*m
-        .subcommand_matches("ping")
-        .unwrap()
-        .get_one::<bool>("global")
-        .expect("defaulted by clap"));
+    assert!(
+        *m.subcommand_matches("ping")
+            .unwrap()
+            .get_one::<bool>("global")
+            .expect("defaulted by clap")
+    );
 }
 
 #[test]
@@ -172,7 +173,10 @@ fn global_overrides_default() {
 #[test]
 #[cfg(feature = "env")]
 fn global_overrides_env() {
+    unsafe {
+
     std::env::set_var("GLOBAL_OVERRIDES_ENV", "from_env");
+    }
 
     let cmd = Command::new("test")
         .arg(

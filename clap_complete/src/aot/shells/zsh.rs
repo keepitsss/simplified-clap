@@ -2,8 +2,10 @@ use std::io::{Error, Write};
 
 use clap::{Arg, ArgAction, Command, ValueHint};
 
-use crate::generator::{utils, Generator};
-use crate::INTERNAL_ERROR_MSG;
+use crate::{
+    INTERNAL_ERROR_MSG,
+    generator::{Generator, utils},
+};
 
 /// Generate zsh completion file
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -232,7 +234,7 @@ fn get_subcommands_of(parent: &Command) -> String {
     let subcommand_names = utils::subcommands(parent);
     let mut all_subcommands = vec![];
 
-    for (ref name, ref bin_name) in &subcommand_names {
+    for (name, bin_name) in &subcommand_names {
         debug!(
             "get_subcommands_of:iter: parent={}, name={name}, bin_name={bin_name}",
             parent.get_name(),

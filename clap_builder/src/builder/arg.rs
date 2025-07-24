@@ -13,20 +13,14 @@ use std::{
 use super::{ArgFlags, ArgSettings};
 #[cfg(feature = "unstable-ext")]
 use crate::builder::ext::Extension;
-use crate::builder::ext::Extensions;
-use crate::builder::ArgPredicate;
-use crate::builder::IntoResettable;
-use crate::builder::OsStr;
-use crate::builder::PossibleValue;
-use crate::builder::Str;
-use crate::builder::StyledStr;
-use crate::builder::Styles;
-use crate::builder::ValueRange;
-use crate::util::AnyValueId;
-use crate::ArgAction;
-use crate::Id;
-use crate::ValueHint;
-use crate::INTERNAL_ERROR_MSG;
+use crate::{
+    ArgAction, INTERNAL_ERROR_MSG, Id, ValueHint,
+    builder::{
+        ArgPredicate, IntoResettable, OsStr, PossibleValue, Str, StyledStr, Styles, ValueRange,
+        ext::Extensions,
+    },
+    util::AnyValueId,
+};
 
 /// The abstract representation of a command line argument. Used to set all the options and
 /// relationships that define a valid argument for the program.
@@ -4521,15 +4515,15 @@ impl Arg {
             }
         }
         if let Some(action) = self.action.as_ref() {
-            if let Some(default_value) = action.default_value() {
-                if self.default_vals.is_empty() {
-                    self.default_vals = vec![default_value.into()];
-                }
+            if let Some(default_value) = action.default_value()
+                && self.default_vals.is_empty()
+            {
+                self.default_vals = vec![default_value.into()];
             }
-            if let Some(default_value) = action.default_missing_value() {
-                if self.default_missing_vals.is_empty() {
-                    self.default_missing_vals = vec![default_value.into()];
-                }
+            if let Some(default_value) = action.default_missing_value()
+                && self.default_missing_vals.is_empty()
+            {
+                self.default_missing_vals = vec![default_value.into()];
             }
         }
 
@@ -4761,8 +4755,7 @@ pub trait ArgExt: Extension {}
 // Flags
 #[cfg(test)]
 mod test {
-    use super::Arg;
-    use super::ArgAction;
+    use super::{Arg, ArgAction};
 
     #[test]
     fn flag_display_long() {
