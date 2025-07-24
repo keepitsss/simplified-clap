@@ -18,16 +18,11 @@ clap = { path = "../", version = "4.0.0", default-features = false, features = [
     "std",
     "help",
 ] }
-divan = "0.1.14"
 lazy_static = "1.4.0"
 
 [[bench]]
 harness = false
 name = "end_to_end"
-
-[[bench]]
-harness = false
-name = "rustup"
 
 
 [lints]

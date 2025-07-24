@@ -2,317 +2,310 @@
 //!
 //! CLI used is from rustup 408ed84f0e50511ed44a405dd91365e5da588790
 
-#![allow(elided_lifetimes_in_paths)] // needed for divan
+use std::hint::black_box;
 
-use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgGroup, Command};
 
-#[divan::bench]
-fn build() -> Command {
-    build_cli()
-}
+#[allow(unreachable_pub)]
+pub const ARGS: &[&[&str]] = black_box(&[&[""], &["rustup", "override", "add", "stable"]]);
 
-mod startup {
-    use super::{build_cli, ArgMatches};
-
-    #[divan::bench]
-    fn empty() -> ArgMatches {
-        build_cli().get_matches_from([""])
-    }
-
-    #[divan::bench]
-    fn sc() -> ArgMatches {
-        build_cli().get_matches_from(["rustup override add stable"])
-    }
-}
-
-fn build_cli() -> Command {
-    Command::new("rustup")
-        .version("0.9.0") // Simulating
-        .about("The Rust toolchain installer")
-        .after_help(RUSTUP_HELP)
-        .arg(
-            Arg::new("verbose")
-                .help("Enable verbose output")
-                .short('v')
-                .long("verbose")
-                .action(ArgAction::SetTrue),
-        )
-        .subcommand(
-            Command::new("show")
-                .about("Show the active and installed toolchains")
-                .after_help(SHOW_HELP),
-        )
-        .subcommand(
-            Command::new("install")
-                .about("Update Rust toolchains")
-                .after_help(TOOLCHAIN_INSTALL_HELP)
-                .hide(true) // synonym for 'toolchain install'
-                .arg(Arg::new("toolchain").required(true)),
-        )
-        .subcommand(
-            Command::new("update")
-                .about("Update Rust toolchains")
-                .after_help(UPDATE_HELP)
-                .arg(Arg::new("toolchain").required(true))
-                .arg(
-                    Arg::new("no-self-update")
-                        .help("Don't perform self update when running the `rustup` command")
-                        .long("no-self-update")
-                        .action(ArgAction::SetTrue)
-                        .hide(true),
-                ),
-        )
-        .subcommand(
-            Command::new("default")
-                .about("Set the default toolchain")
-                .after_help(DEFAULT_HELP)
-                .arg(Arg::new("toolchain").required(true)),
-        )
-        .subcommand(
-            Command::new("toolchain")
-                .about("Modify or query the installed toolchains")
-                .after_help(TOOLCHAIN_HELP)
-                .subcommand(Command::new("list").about("List installed toolchains"))
-                .subcommand(
-                    Command::new("install")
-                        .about("Install or update a given toolchain")
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("uninstall")
-                        .about("Uninstall a toolchain")
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("link")
-                        .about("Create a custom toolchain by symlinking to a directory")
-                        .arg(Arg::new("toolchain").required(true))
-                        .arg(Arg::new("path").required(true)),
-                )
-                .subcommand(
-                    Command::new("update")
-                        .hide(true) // synonym for 'install'
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("add")
-                        .hide(true) // synonym for 'install'
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("remove")
-                        .hide(true) // synonym for 'uninstall'
-                        .arg(Arg::new("toolchain").required(true)),
-                ),
-        )
-        .subcommand(
-            Command::new("target")
-                .about("Modify a toolchain's supported targets")
-                .subcommand(
-                    Command::new("list")
-                        .about("List installed and available targets")
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                )
-                .subcommand(
-                    Command::new("add")
-                        .about("Add a target to a Rust toolchain")
-                        .arg(Arg::new("target").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                )
-                .subcommand(
-                    Command::new("remove")
-                        .about("Remove a target  from a Rust toolchain")
-                        .arg(Arg::new("target").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                )
-                .subcommand(
-                    Command::new("install")
-                        .hide(true) // synonym for 'add'
-                        .arg(Arg::new("target").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                )
-                .subcommand(
-                    Command::new("uninstall")
-                        .hide(true) // synonym for 'remove'
-                        .arg(Arg::new("target").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                ),
-        )
-        .subcommand(
-            Command::new("component")
-                .about("Modify a toolchain's installed components")
-                .subcommand(
-                    Command::new("list")
-                        .about("List installed and available components")
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        ),
-                )
-                .subcommand(
-                    Command::new("add")
-                        .about("Add a component to a Rust toolchain")
-                        .arg(Arg::new("component").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        )
-                        .arg(Arg::new("target").long("target").action(ArgAction::Set)),
-                )
-                .subcommand(
-                    Command::new("remove")
-                        .about("Remove a component from a Rust toolchain")
-                        .arg(Arg::new("component").required(true))
-                        .arg(
-                            Arg::new("toolchain")
-                                .long("toolchain")
-                                .action(ArgAction::Set),
-                        )
-                        .arg(Arg::new("target").long("target").action(ArgAction::Set)),
-                ),
-        )
-        .subcommand(
-            Command::new("override")
-                .about("Modify directory toolchain overrides")
-                .after_help(OVERRIDE_HELP)
-                .subcommand(Command::new("list").about("List directory toolchain overrides"))
-                .subcommand(
-                    Command::new("set")
-                        .about("Set the override toolchain for a directory")
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("unset")
-                        .about("Remove the override toolchain for a directory")
-                        .after_help(OVERRIDE_UNSET_HELP)
-                        .arg(
-                            Arg::new("path")
-                                .long("path")
-                                .action(ArgAction::Set)
-                                .help("Path to the directory"),
-                        )
-                        .arg(
-                            Arg::new("nonexistent")
-                                .long("nonexistent")
-                                .action(ArgAction::SetTrue)
-                                .help("Remove override toolchain for all nonexistent directories"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("add")
-                        .hide(true) // synonym for 'set'
-                        .arg(Arg::new("toolchain").required(true)),
-                )
-                .subcommand(
-                    Command::new("remove")
-                        .hide(true) // synonym for 'unset'
-                        .about("Remove the override toolchain for a directory")
-                        .arg(Arg::new("path").long("path").action(ArgAction::Set))
-                        .arg(
-                            Arg::new("nonexistent")
-                                .long("nonexistent")
-                                .action(ArgAction::SetTrue)
-                                .help("Remove override toolchain for all nonexistent directories"),
-                        ),
-                ),
-        )
-        .subcommand(
-            Command::new("run")
-                .about("Run a command with an environment configured for a given toolchain")
-                .after_help(RUN_HELP)
-                .arg(Arg::new("toolchain").required(true))
-                .arg(
-                    Arg::new("command")
-                        .required(true)
-                        .num_args(1..)
-                        .trailing_var_arg(true),
-                ),
-        )
-        .subcommand(
-            Command::new("which")
-                .about("Display which binary will be run for a given command")
-                .arg(Arg::new("command").required(true)),
-        )
-        .subcommand(
-            Command::new("doc")
-                .about("Open the documentation for the current toolchain")
-                .after_help(DOC_HELP)
-                .arg(
-                    Arg::new("book")
-                        .long("book")
-                        .action(ArgAction::SetTrue)
-                        .help("The Rust Programming Language book"),
-                )
-                .arg(
-                    Arg::new("std")
-                        .long("std")
-                        .action(ArgAction::SetTrue)
-                        .help("Standard library API documentation"),
-                )
-                .group(ArgGroup::new("page").args(["book", "std"])),
-        )
-        .subcommand(
-            Command::new("man")
-                .about("View the man page for a given command")
-                .arg(Arg::new("command").required(true))
-                .arg(
-                    Arg::new("toolchain")
-                        .long("toolchain")
-                        .action(ArgAction::Set),
-                ),
-        )
-        .subcommand(
-            Command::new("self")
-                .about("Modify the rustup installation")
-                .subcommand(Command::new("update").about("Download and install updates to rustup"))
-                .subcommand(
-                    Command::new("uninstall")
-                        .about("Uninstall rustup.")
-                        .arg(Arg::new("no-prompt").short('y').action(ArgAction::SetTrue)),
-                )
-                .subcommand(
-                    Command::new("upgrade-data").about("Upgrade the internal data format."),
-                ),
-        )
-        .subcommand(
-            Command::new("telemetry")
-                .about("rustup telemetry commands")
-                .hide(true)
-                .subcommand(Command::new("enable").about("Enable rustup telemetry"))
-                .subcommand(Command::new("disable").about("Disable rustup telemetry"))
-                .subcommand(Command::new("analyze").about("Analyze stored telemetry")),
-        )
-        .subcommand(
-            Command::new("set")
-                .about("Alter rustup settings")
-                .subcommand(
-                    Command::new("default-host")
-                        .about("The triple used to identify toolchains when not specified")
-                        .arg(Arg::new("host_triple").required(true)),
-                ),
-        )
+#[allow(unreachable_pub)]
+pub fn build_cli() -> Command {
+    black_box(
+        Command::new("rustup")
+            .version("0.9.0") // Simulating
+            .about("The Rust toolchain installer")
+            .after_help(RUSTUP_HELP)
+            .arg(
+                Arg::new("verbose")
+                    .help("Enable verbose output")
+                    .short('v')
+                    .long("verbose")
+                    .action(ArgAction::SetTrue),
+            )
+            .subcommand(
+                Command::new("show")
+                    .about("Show the active and installed toolchains")
+                    .after_help(SHOW_HELP),
+            )
+            .subcommand(
+                Command::new("install")
+                    .about("Update Rust toolchains")
+                    .after_help(TOOLCHAIN_INSTALL_HELP)
+                    .hide(true) // synonym for 'toolchain install'
+                    .arg(Arg::new("toolchain").required(true)),
+            )
+            .subcommand(
+                Command::new("update")
+                    .about("Update Rust toolchains")
+                    .after_help(UPDATE_HELP)
+                    .arg(Arg::new("toolchain").required(true))
+                    .arg(
+                        Arg::new("no-self-update")
+                            .help("Don't perform self update when running the `rustup` command")
+                            .long("no-self-update")
+                            .action(ArgAction::SetTrue)
+                            .hide(true),
+                    ),
+            )
+            .subcommand(
+                Command::new("default")
+                    .about("Set the default toolchain")
+                    .after_help(DEFAULT_HELP)
+                    .arg(Arg::new("toolchain").required(true)),
+            )
+            .subcommand(
+                Command::new("toolchain")
+                    .about("Modify or query the installed toolchains")
+                    .after_help(TOOLCHAIN_HELP)
+                    .subcommand(Command::new("list").about("List installed toolchains"))
+                    .subcommand(
+                        Command::new("install")
+                            .about("Install or update a given toolchain")
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("uninstall")
+                            .about("Uninstall a toolchain")
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("link")
+                            .about("Create a custom toolchain by symlinking to a directory")
+                            .arg(Arg::new("toolchain").required(true))
+                            .arg(Arg::new("path").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("update")
+                            .hide(true) // synonym for 'install'
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("add")
+                            .hide(true) // synonym for 'install'
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("remove")
+                            .hide(true) // synonym for 'uninstall'
+                            .arg(Arg::new("toolchain").required(true)),
+                    ),
+            )
+            .subcommand(
+                Command::new("target")
+                    .about("Modify a toolchain's supported targets")
+                    .subcommand(
+                        Command::new("list")
+                            .about("List installed and available targets")
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("add")
+                            .about("Add a target to a Rust toolchain")
+                            .arg(Arg::new("target").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("remove")
+                            .about("Remove a target  from a Rust toolchain")
+                            .arg(Arg::new("target").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("install")
+                            .hide(true) // synonym for 'add'
+                            .arg(Arg::new("target").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("uninstall")
+                            .hide(true) // synonym for 'remove'
+                            .arg(Arg::new("target").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    ),
+            )
+            .subcommand(
+                Command::new("component")
+                    .about("Modify a toolchain's installed components")
+                    .subcommand(
+                        Command::new("list")
+                            .about("List installed and available components")
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("add")
+                            .about("Add a component to a Rust toolchain")
+                            .arg(Arg::new("component").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            )
+                            .arg(Arg::new("target").long("target").action(ArgAction::Set)),
+                    )
+                    .subcommand(
+                        Command::new("remove")
+                            .about("Remove a component from a Rust toolchain")
+                            .arg(Arg::new("component").required(true))
+                            .arg(
+                                Arg::new("toolchain")
+                                    .long("toolchain")
+                                    .action(ArgAction::Set),
+                            )
+                            .arg(Arg::new("target").long("target").action(ArgAction::Set)),
+                    ),
+            )
+            .subcommand(
+                Command::new("override")
+                    .about("Modify directory toolchain overrides")
+                    .after_help(OVERRIDE_HELP)
+                    .subcommand(Command::new("list").about("List directory toolchain overrides"))
+                    .subcommand(
+                        Command::new("set")
+                            .about("Set the override toolchain for a directory")
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("unset")
+                            .about("Remove the override toolchain for a directory")
+                            .after_help(OVERRIDE_UNSET_HELP)
+                            .arg(
+                                Arg::new("path")
+                                    .long("path")
+                                    .action(ArgAction::Set)
+                                    .help("Path to the directory"),
+                            )
+                            .arg(
+                                Arg::new("nonexistent")
+                                    .long("nonexistent")
+                                    .action(ArgAction::SetTrue)
+                                    .help(
+                                        "Remove override toolchain for all nonexistent directories",
+                                    ),
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("add")
+                            .hide(true) // synonym for 'set'
+                            .arg(Arg::new("toolchain").required(true)),
+                    )
+                    .subcommand(
+                        Command::new("remove")
+                            .hide(true) // synonym for 'unset'
+                            .about("Remove the override toolchain for a directory")
+                            .arg(Arg::new("path").long("path").action(ArgAction::Set))
+                            .arg(
+                                Arg::new("nonexistent")
+                                    .long("nonexistent")
+                                    .action(ArgAction::SetTrue)
+                                    .help(
+                                        "Remove override toolchain for all nonexistent directories",
+                                    ),
+                            ),
+                    ),
+            )
+            .subcommand(
+                Command::new("run")
+                    .about("Run a command with an environment configured for a given toolchain")
+                    .after_help(RUN_HELP)
+                    .arg(Arg::new("toolchain").required(true))
+                    .arg(
+                        Arg::new("command")
+                            .required(true)
+                            .num_args(1..)
+                            .trailing_var_arg(true),
+                    ),
+            )
+            .subcommand(
+                Command::new("which")
+                    .about("Display which binary will be run for a given command")
+                    .arg(Arg::new("command").required(true)),
+            )
+            .subcommand(
+                Command::new("doc")
+                    .about("Open the documentation for the current toolchain")
+                    .after_help(DOC_HELP)
+                    .arg(
+                        Arg::new("book")
+                            .long("book")
+                            .action(ArgAction::SetTrue)
+                            .help("The Rust Programming Language book"),
+                    )
+                    .arg(
+                        Arg::new("std")
+                            .long("std")
+                            .action(ArgAction::SetTrue)
+                            .help("Standard library API documentation"),
+                    )
+                    .group(ArgGroup::new("page").args(["book", "std"])),
+            )
+            .subcommand(
+                Command::new("man")
+                    .about("View the man page for a given command")
+                    .arg(Arg::new("command").required(true))
+                    .arg(
+                        Arg::new("toolchain")
+                            .long("toolchain")
+                            .action(ArgAction::Set),
+                    ),
+            )
+            .subcommand(
+                Command::new("self")
+                    .about("Modify the rustup installation")
+                    .subcommand(
+                        Command::new("update").about("Download and install updates to rustup"),
+                    )
+                    .subcommand(
+                        Command::new("uninstall")
+                            .about("Uninstall rustup.")
+                            .arg(Arg::new("no-prompt").short('y').action(ArgAction::SetTrue)),
+                    )
+                    .subcommand(
+                        Command::new("upgrade-data").about("Upgrade the internal data format."),
+                    ),
+            )
+            .subcommand(
+                Command::new("telemetry")
+                    .about("rustup telemetry commands")
+                    .hide(true)
+                    .subcommand(Command::new("enable").about("Enable rustup telemetry"))
+                    .subcommand(Command::new("disable").about("Disable rustup telemetry"))
+                    .subcommand(Command::new("analyze").about("Analyze stored telemetry")),
+            )
+            .subcommand(
+                Command::new("set")
+                    .about("Alter rustup settings")
+                    .subcommand(
+                        Command::new("default-host")
+                            .about("The triple used to identify toolchains when not specified")
+                            .arg(Arg::new("host_triple").required(true)),
+                    ),
+            ),
+    )
 }
 
 static RUSTUP_HELP: &str = r"
@@ -438,7 +431,3 @@ default browser.
 
 By default, it opens the documentation index. Use the various flags to
 open specific pieces of documentation.";
-
-fn main() {
-    divan::main();
-}
