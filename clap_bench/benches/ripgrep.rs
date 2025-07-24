@@ -25,18 +25,18 @@ mod build {
 }
 
 mod render_help {
-    use super::{app_long, app_short, build_help};
+    use super::{app_long, app_short};
 
     #[divan::bench]
     fn short_help(bencher: divan::Bencher) {
         let mut cmd = app_short();
-        bencher.bench_local(|| build_help(&mut cmd));
+        bencher.bench_local(|| cmd.render_help().to_string());
     }
 
     #[divan::bench]
     fn long_help(bencher: divan::Bencher) {
         let mut cmd = app_long();
-        bencher.bench_local(|| build_help(&mut cmd));
+        bencher.bench_local(|| cmd.render_help().to_string());
     }
 }
 
@@ -270,12 +270,6 @@ fn app_short() -> Command {
 /// Build a clap application with long help strings.
 fn app_long() -> Command {
     cmd(true, |k| USAGES[k].long)
-}
-
-/// Build the help text of an application.
-fn build_help(cmd: &mut Command) -> String {
-    let help = cmd.render_help();
-    help.to_string()
 }
 
 /// Build a clap application parameterized by usage strings.
