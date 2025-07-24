@@ -1,37 +1,29 @@
 #![cfg_attr(not(feature = "usage"), allow(unused_mut))]
 
 // Std
-use std::env;
-use std::ffi::OsString;
-use std::fmt;
-use std::io;
-use std::ops::Index;
-use std::path::Path;
+use std::{env, ffi::OsString, fmt, io, ops::Index, path::Path};
 
 // Internal
 use crate::builder::app_settings::{AppFlags, AppSettings};
-use crate::builder::arg_settings::ArgSettings;
-use crate::builder::ext::Extension;
-use crate::builder::ext::Extensions;
-use crate::builder::ArgAction;
-use crate::builder::IntoResettable;
-use crate::builder::PossibleValue;
-use crate::builder::Str;
-use crate::builder::StyledStr;
-use crate::builder::Styles;
-use crate::builder::{Arg, ArgGroup, ArgPredicate};
-use crate::error::ErrorKind;
-use crate::error::Result as ClapResult;
-use crate::mkeymap::MKeyMap;
-use crate::output::fmt::Stream;
-use crate::output::{fmt::Colorizer, write_help, Usage};
-use crate::parser::{ArgMatcher, ArgMatches, Parser};
-use crate::util::ChildGraph;
-use crate::util::{color::ColorChoice, Id};
-use crate::{Error, INTERNAL_ERROR_MSG};
-
 #[cfg(debug_assertions)]
 use crate::builder::debug_asserts::assert_app;
+use crate::{
+    builder::{
+        arg_settings::ArgSettings,
+        ext::{Extension, Extensions},
+        Arg, ArgAction, ArgGroup, ArgPredicate, IntoResettable, PossibleValue, Str, StyledStr,
+        Styles,
+    },
+    error::{ErrorKind, Result as ClapResult},
+    mkeymap::MKeyMap,
+    output::{
+        fmt::{Colorizer, Stream},
+        write_help, Usage,
+    },
+    parser::{ArgMatcher, ArgMatches, Parser},
+    util::{color::ColorChoice, ChildGraph, Id},
+    Error, INTERNAL_ERROR_MSG,
+};
 
 /// Build a command-line interface.
 ///
@@ -813,7 +805,7 @@ impl Command {
         T: Into<OsString> + Clone,
     {
         let mut raw_args = clap_lex::RawArgs::new(itr);
-        let mut cursor = raw_args.cursor();
+        let mut cursor = 0;
 
         if self.settings.is_set(AppSettings::Multicall) {
             if let Some(argv0) = raw_args.next_os(&mut cursor) {
@@ -824,7 +816,7 @@ impl Command {
                     debug!("Command::try_get_matches_from_mut: Parsed command {command} from argv");
 
                     debug!("Command::try_get_matches_from_mut: Reinserting command into arguments so subcommand parser matches it");
-                    raw_args.insert(&cursor, [&command]);
+                    raw_args.insert(cursor, [&command]);
                     debug!("Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name");
                     self.name = "".into();
                     self.bin_name = None;
@@ -4262,7 +4254,7 @@ impl Command {
     fn _do_parse(
         &mut self,
         raw_args: &mut clap_lex::RawArgs,
-        args_cursor: clap_lex::ArgCursor,
+        args_cursor: usize,
     ) -> ClapResult<ArgMatches> {
         debug!("Command::_do_parse");
 

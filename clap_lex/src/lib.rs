@@ -117,9 +117,7 @@
 
 mod ext;
 
-use std::ffi::OsStr;
-use std::ffi::OsString;
-
+use std::ffi::{OsStr, OsString};
 pub use std::io::SeekFrom;
 
 pub use ext::OsStrExt;
@@ -172,43 +170,26 @@ impl RawArgs {
         Self::from(iter)
     }
 
-    /// Create a cursor for walking the arguments
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::path::PathBuf;
-    /// let raw = clap_lex::RawArgs::new(["bin", "foo.txt"]);
-    /// let mut cursor = raw.cursor();
-    /// let _bin = raw.next_os(&mut cursor);
-    ///
-    /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
-    /// println!("{paths:?}");
-    /// ```
-    pub fn cursor(&self) -> ArgCursor {
-        ArgCursor::new()
-    }
-
     /// Advance the cursor, returning the next [`ParsedArg`]
-    pub fn next(&self, cursor: &mut ArgCursor) -> Option<ParsedArg<'_>> {
+    pub fn next(&self, cursor: &mut usize) -> Option<ParsedArg<'_>> {
         self.next_os(cursor).map(ParsedArg::new)
     }
 
     /// Advance the cursor, returning a raw argument value.
-    pub fn next_os(&self, cursor: &mut ArgCursor) -> Option<&OsStr> {
-        let next = self.items.get(cursor.cursor).map(|s| s.as_os_str());
-        cursor.cursor = cursor.cursor.saturating_add(1);
+    pub fn next_os(&self, cursor: &mut usize) -> Option<&OsStr> {
+        let next = self.items.get(*cursor).map(|s| s.as_os_str());
+        *cursor = cursor.saturating_add(1);
         next
     }
 
     /// Return the next [`ParsedArg`]
-    pub fn peek(&self, cursor: &ArgCursor) -> Option<ParsedArg<'_>> {
+    pub fn peek(&self, cursor: usize) -> Option<ParsedArg<'_>> {
         self.peek_os(cursor).map(ParsedArg::new)
     }
 
     /// Return a raw argument value.
-    pub fn peek_os(&self, cursor: &ArgCursor) -> Option<&OsStr> {
-        self.items.get(cursor.cursor).map(|s| s.as_os_str())
+    pub fn peek_os(&self, cursor: usize) -> Option<&OsStr> {
+        self.items.get(cursor).map(|s| s.as_os_str())
     }
 
     /// Return all remaining raw arguments, advancing the cursor to the end
@@ -224,37 +205,35 @@ impl RawArgs {
     /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
     /// println!("{paths:?}");
     /// ```
-    pub fn remaining(&self, cursor: &mut ArgCursor) -> impl Iterator<Item = &OsStr> {
-        let remaining = self.items[cursor.cursor..].iter().map(|s| s.as_os_str());
-        cursor.cursor = self.items.len();
+    pub fn remaining(&self, cursor: &mut usize) -> impl Iterator<Item = &OsStr> {
+        let remaining = self.items[*cursor..].iter().map(|s| s.as_os_str());
+        *cursor = self.items.len();
         remaining
     }
 
     /// Adjust the cursor's position
-    pub fn seek(&self, cursor: &mut ArgCursor, pos: SeekFrom) {
+    pub fn seek(&self, cursor: &mut usize, pos: SeekFrom) {
         let pos = match pos {
             SeekFrom::Start(pos) => pos,
             SeekFrom::End(pos) => (self.items.len() as i64).saturating_add(pos).max(0) as u64,
-            SeekFrom::Current(pos) => (cursor.cursor as i64).saturating_add(pos).max(0) as u64,
+            SeekFrom::Current(pos) => (*cursor as i64).saturating_add(pos).max(0) as u64,
         };
         let pos = (pos as usize).min(self.items.len());
-        cursor.cursor = pos;
+        *cursor = pos;
     }
 
     /// Inject arguments before the [`RawArgs::next`]
     pub fn insert(
         &mut self,
-        cursor: &ArgCursor,
+        cursor: usize,
         insert_items: impl IntoIterator<Item = impl Into<OsString>>,
     ) {
-        self.items.splice(
-            cursor.cursor..cursor.cursor,
-            insert_items.into_iter().map(Into::into),
-        );
+        self.items
+            .splice(cursor..cursor, insert_items.into_iter().map(Into::into));
     }
 
     /// Any remaining args?
-    pub fn is_end(&self, cursor: &ArgCursor) -> bool {
+    pub fn is_end(&self, cursor: usize) -> bool {
         self.peek_os(cursor).is_none()
     }
 }
@@ -268,18 +247,6 @@ where
         Self {
             items: val.map(|x| x.into()).collect(),
         }
-    }
-}
-
-/// Position within [`RawArgs`]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ArgCursor {
-    cursor: usize,
-}
-
-impl ArgCursor {
-    fn new() -> Self {
-        Self { cursor: 0 }
     }
 }
 

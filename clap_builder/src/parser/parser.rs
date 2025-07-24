@@ -8,17 +8,14 @@ use clap_lex::OsStrExt as _;
 
 // Internal
 use crate::builder::{Arg, Command};
-use crate::error::Error as ClapError;
-use crate::error::Result as ClapResult;
-use crate::mkeymap::KeyType;
-use crate::output::Usage;
-use crate::parser::features::suggestions;
-use crate::parser::{ArgMatcher, SubCommand};
-use crate::parser::{Validator, ValueSource};
-use crate::util::AnyValue;
-use crate::util::Id;
-use crate::ArgAction;
-use crate::INTERNAL_ERROR_MSG;
+use crate::{
+    error::{Error as ClapError, Result as ClapResult},
+    mkeymap::KeyType,
+    output::Usage,
+    parser::{features::suggestions, ArgMatcher, SubCommand, Validator, ValueSource},
+    util::{AnyValue, Id},
+    ArgAction, INTERNAL_ERROR_MSG,
+};
 
 pub(crate) struct Parser<'cmd> {
     cmd: &'cmd mut Command,
@@ -50,7 +47,7 @@ impl<'cmd> Parser<'cmd> {
         &mut self,
         matcher: &mut ArgMatcher,
         raw_args: &mut clap_lex::RawArgs,
-        args_cursor: clap_lex::ArgCursor,
+        args_cursor: usize,
     ) -> ClapResult<()> {
         debug!("Parser::get_matches_with");
 
@@ -77,7 +74,7 @@ impl<'cmd> Parser<'cmd> {
         &mut self,
         matcher: &mut ArgMatcher,
         raw_args: &mut clap_lex::RawArgs,
-        mut args_cursor: clap_lex::ArgCursor,
+        mut args_cursor: usize,
     ) -> ClapResult<()> {
         debug!("Parser::parse");
         // Verify all positional assertions pass
@@ -344,7 +341,7 @@ impl<'cmd> Parser<'cmd> {
                 debug!("Parser::get_matches_with: Low index multiples...{low_index_mults:?}");
 
                 if (low_index_mults || missing_pos) && !is_terminated {
-                    let skip_current = if let Some(n) = raw_args.peek(&args_cursor) {
+                    let skip_current = if let Some(n) = raw_args.peek(args_cursor) {
                         if let Some(arg) = self
                             .cmd
                             .get_positionals()
@@ -712,7 +709,7 @@ impl<'cmd> Parser<'cmd> {
         sc_name: &str,
         matcher: &mut ArgMatcher,
         raw_args: &mut clap_lex::RawArgs,
-        args_cursor: clap_lex::ArgCursor,
+        args_cursor: usize,
         keep_state: bool,
     ) -> ClapResult<()> {
         debug!("Parser::parse_subcommand");

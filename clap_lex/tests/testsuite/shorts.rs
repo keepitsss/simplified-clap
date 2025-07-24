@@ -1,7 +1,7 @@
 #[test]
 fn iter() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let shorts = next.to_short().unwrap();
@@ -13,7 +13,7 @@ fn iter() {
 #[test]
 fn next_flag() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -32,7 +32,7 @@ fn next_flag() {
 #[test]
 fn next_value_os() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -45,7 +45,7 @@ fn next_value_os() {
 #[test]
 fn next_flag_with_value() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -59,7 +59,7 @@ fn next_flag_with_value() {
 #[test]
 fn next_flag_with_no_value() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -76,7 +76,7 @@ fn next_flag_with_no_value() {
 #[test]
 fn advance_by_nothing() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -90,7 +90,7 @@ fn advance_by_nothing() {
 #[test]
 fn advance_by_something() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -104,7 +104,7 @@ fn advance_by_something() {
 #[test]
 fn advance_by_out_of_bounds() {
     let raw = clap_lex::RawArgs::new(["bin", "-short"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -118,7 +118,7 @@ fn advance_by_out_of_bounds() {
 #[test]
 fn is_not_empty() {
     let raw = clap_lex::RawArgs::new(["bin", "-hello"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let shorts = next.to_short().unwrap();
@@ -129,7 +129,7 @@ fn is_not_empty() {
 #[test]
 fn is_partial_not_empty() {
     let raw = clap_lex::RawArgs::new(["bin", "-hello"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -141,7 +141,7 @@ fn is_partial_not_empty() {
 #[test]
 fn is_exhausted_empty() {
     let raw = clap_lex::RawArgs::new(["bin", "-hello"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let mut shorts = next.to_short().unwrap();
@@ -153,7 +153,7 @@ fn is_exhausted_empty() {
 #[test]
 fn is_negative_number() {
     let raw = clap_lex::RawArgs::new(["bin", "-1.0"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let shorts = next.to_short().unwrap();
@@ -164,7 +164,7 @@ fn is_negative_number() {
 #[test]
 fn is_not_negaitve_number() {
     let raw = clap_lex::RawArgs::new(["bin", "-hello"]);
-    let mut cursor = raw.cursor();
+    let mut cursor = 0;
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("bin")));
     let next = raw.next(&mut cursor).unwrap();
     let shorts = next.to_short().unwrap();
