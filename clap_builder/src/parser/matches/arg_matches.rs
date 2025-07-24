@@ -1,21 +1,20 @@
 // Std
-use std::any::Any;
-use std::ffi::{OsStr, OsString};
-use std::fmt::Debug;
-use std::iter::{Cloned, Flatten, Map};
-use std::slice::Iter;
+use std::{
+    any::Any,
+    ffi::{OsStr, OsString},
+    fmt::Debug,
+    iter::{Cloned, Flatten, Map},
+    slice::Iter,
+};
 
 // Internal
 #[cfg(debug_assertions)]
 use crate::builder::Str;
-use crate::parser::MatchedArg;
-use crate::parser::MatchesError;
-use crate::parser::ValueSource;
-use crate::util::AnyValue;
-use crate::util::AnyValueId;
-use crate::util::FlatMap;
-use crate::util::Id;
-use crate::INTERNAL_ERROR_MSG;
+use crate::{
+    parser::{MatchedArg, MatchesError, ValueSource},
+    util::{AnyValue, AnyValueId, FlatMap, Id},
+    INTERNAL_ERROR_MSG,
+};
 
 /// Container for parse results.
 ///
@@ -1619,6 +1618,7 @@ impl Default for RawValues<'_> {
 
 #[derive(Clone, Debug)]
 #[deprecated(since = "4.1.0", note = "Use Occurrences instead")]
+#[allow(unused)]
 pub(crate) struct GroupedValues<'a> {
     #[allow(clippy::type_complexity)]
     iter: Map<Iter<'a, Vec<AnyValue>>, fn(&Vec<AnyValue>) -> Vec<&str>>,
@@ -1950,7 +1950,6 @@ fn unwrap_downcast_into<T: Any + Clone + Send + Sync + 'static>(value: AnyValue)
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::ArgAction;
 
     #[test]
