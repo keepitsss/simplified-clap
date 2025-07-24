@@ -27,10 +27,6 @@ name = "end_to_end"
 
 [[bench]]
 harness = false
-name = "simple"
-
-[[bench]]
-harness = false
 name = "rustup"
 
 
