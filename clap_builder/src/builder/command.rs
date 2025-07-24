@@ -820,7 +820,7 @@ impl Command {
                     debug!("Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name");
                     self.name = "".into();
                     self.bin_name = None;
-                    return self._do_parse(&mut raw_args, cursor);
+                    return self._do_parse(raw_args, cursor);
                 }
             }
         };
@@ -846,7 +846,7 @@ impl Command {
             }
         }
 
-        self._do_parse(&mut raw_args, cursor)
+        self._do_parse(raw_args, cursor)
     }
 
     /// Prints the short help message (`-h`) to [`io::stdout()`].
@@ -4253,7 +4253,7 @@ impl Command {
 
     fn _do_parse(
         &mut self,
-        raw_args: &mut clap_lex::RawArgs,
+        raw_args: clap_lex::RawArgs,
         args_cursor: usize,
     ) -> ClapResult<ArgMatches> {
         debug!("Command::_do_parse");

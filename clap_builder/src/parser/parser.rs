@@ -46,7 +46,7 @@ impl<'cmd> Parser<'cmd> {
     pub(crate) fn get_matches_with(
         &mut self,
         matcher: &mut ArgMatcher,
-        raw_args: &mut clap_lex::RawArgs,
+        raw_args: clap_lex::RawArgs,
         args_cursor: usize,
     ) -> ClapResult<()> {
         debug!("Parser::get_matches_with");
@@ -73,7 +73,7 @@ impl<'cmd> Parser<'cmd> {
     pub(crate) fn parse(
         &mut self,
         matcher: &mut ArgMatcher,
-        raw_args: &mut clap_lex::RawArgs,
+        raw_args: clap_lex::RawArgs,
         mut args_cursor: usize,
     ) -> ClapResult<()> {
         debug!("Parser::parse");
@@ -115,7 +115,7 @@ impl<'cmd> Parser<'cmd> {
                     debug!("Parser::get_matches_with: sc={sc_name:?}");
                     if let Some(sc_name) = sc_name {
                         if sc_name == "help" && !self.cmd.is_disable_help_subcommand_set() {
-                            ok!(self.parse_help_subcommand(raw_args.remaining(&mut args_cursor)));
+                            ok!(self.parse_help_subcommand(raw_args.remaining(args_cursor)));
                             unreachable!("`parse_help_subcommand` always errors");
                         } else {
                             subcmd_name = Some(sc_name.to_owned());
@@ -175,12 +175,11 @@ impl<'cmd> Parser<'cmd> {
                         }
                         ParseResult::NoMatchingArg { arg } => {
                             let _ = self.resolve_pending(matcher);
-                            let remaining_args: Vec<_> =
-                                raw_args.remaining(&mut args_cursor).collect();
+                            let remaining_args: Vec<_> = raw_args.remaining(args_cursor);
                             return Err(self.did_you_mean_error(
                                 &arg,
                                 matcher,
-                                &remaining_args,
+                                remaining_args,
                                 trailing_values,
                             ));
                         }
@@ -444,15 +443,15 @@ impl<'cmd> Parser<'cmd> {
                 let mut sc_m = ArgMatcher::new(self.cmd);
                 sc_m.start_occurrence_of_external(self.cmd);
 
-                for raw_val in raw_args.remaining(&mut args_cursor) {
+                for raw_val in raw_args.remaining(args_cursor) {
                     let val = ok!(external_parser.parse_ref(
                         self.cmd,
                         None,
-                        raw_val,
+                        &raw_val,
                         ValueSource::CommandLine
                     ));
                     let external_id = Id::from_static_ref(Id::EXTERNAL);
-                    sc_m.add_val_to(&external_id, val, raw_val.to_os_string());
+                    sc_m.add_val_to(&external_id, val, raw_val.clone());
                 }
 
                 matcher.subcommand(SubCommand {
@@ -641,10 +640,7 @@ impl<'cmd> Parser<'cmd> {
         None
     }
 
-    fn parse_help_subcommand(
-        &self,
-        cmds: impl Iterator<Item = &'cmd OsStr>,
-    ) -> ClapResult<std::convert::Infallible> {
+    fn parse_help_subcommand(&self, cmds: Vec<OsString>) -> ClapResult<std::convert::Infallible> {
         debug!("Parser::parse_help_subcommand");
 
         let mut cmd = self.cmd.clone();
@@ -653,7 +649,7 @@ impl<'cmd> Parser<'cmd> {
 
             for cmd in cmds {
                 sc = if let Some(sc_name) =
-                    sc.find_subcommand(cmd).map(|sc| sc.get_name().to_owned())
+                    sc.find_subcommand(&cmd).map(|sc| sc.get_name().to_owned())
                 {
                     sc._build_subcommand(&sc_name).unwrap()
                 } else {
@@ -708,7 +704,7 @@ impl<'cmd> Parser<'cmd> {
         &mut self,
         sc_name: &str,
         matcher: &mut ArgMatcher,
-        raw_args: &mut clap_lex::RawArgs,
+        raw_args: clap_lex::RawArgs,
         args_cursor: usize,
         keep_state: bool,
     ) -> ClapResult<()> {
@@ -1544,7 +1540,7 @@ impl Parser<'_> {
         &mut self,
         arg: &str,
         matcher: &mut ArgMatcher,
-        remaining_args: &[&OsStr],
+        remaining_args: Vec<OsString>,
         trailing_values: bool,
     ) -> ClapError {
         debug!("Parser::did_you_mean_error: arg={arg}");

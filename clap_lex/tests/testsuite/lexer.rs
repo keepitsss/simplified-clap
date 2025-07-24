@@ -12,10 +12,11 @@ fn insert() {
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("b")));
     assert_eq!(raw.next_os(&mut cursor), Some(std::ffi::OsStr::new("c")));
 
-    let mut cursor = 0;
+    let cursor = 0;
     let rest = raw
-        .remaining(&mut cursor)
-        .map(|s| s.to_string_lossy())
+        .remaining(cursor)
+        .into_iter()
+        .map(|s| s.to_string_lossy().into_owned())
         .collect::<Vec<_>>();
     assert_eq!(rest, vec!["bin", "a", "1", "2", "3", "b", "c"]);
 }

@@ -205,10 +205,8 @@ impl RawArgs {
     /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
     /// println!("{paths:?}");
     /// ```
-    pub fn remaining(&self, cursor: &mut usize) -> impl Iterator<Item = &OsStr> {
-        let remaining = self.items[*cursor..].iter().map(|s| s.as_os_str());
-        *cursor = self.items.len();
-        remaining
+    pub fn remaining(self, cursor: usize) -> Vec<OsString> {
+        self.items[cursor..].to_owned()
     }
 
     /// Adjust the cursor's position

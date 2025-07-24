@@ -1,3 +1,5 @@
+use std::ffi::OsString;
+
 // Internal
 use crate::builder::Command;
 
@@ -48,7 +50,7 @@ where
 /// Returns a suffix that can be empty, or is the standard 'did you mean' phrase
 pub(crate) fn did_you_mean_flag<'a, 'help, I, T>(
     arg: &str,
-    remaining_args: &[&std::ffi::OsStr],
+    remaining_args: Vec<OsString>,
     longs: I,
     subcommands: impl IntoIterator<Item = &'a mut Command>,
 ) -> Option<(String, Option<String>)>
@@ -138,7 +140,7 @@ mod test {
     fn flag_missing_letter() {
         let p_vals = ["test", "possible", "values"];
         assert_eq!(
-            did_you_mean_flag("tst", &[], p_vals.iter(), []),
+            did_you_mean_flag("tst", Vec::new(), p_vals.iter(), []),
             Some(("test".to_owned(), None))
         );
     }
@@ -147,7 +149,7 @@ mod test {
     fn flag_ambiguous() {
         let p_vals = ["test", "temp", "possible", "values"];
         assert_eq!(
-            did_you_mean_flag("te", &[], p_vals.iter(), []),
+            did_you_mean_flag("te", Vec::new(), p_vals.iter(), []),
             Some(("temp".to_owned(), None))
         );
     }
@@ -156,7 +158,7 @@ mod test {
     fn flag_unrelated() {
         let p_vals = ["test", "possible", "values"];
         assert_eq!(
-            did_you_mean_flag("hahaahahah", &[], p_vals.iter(), []),
+            did_you_mean_flag("hahaahahah", Vec::new(), p_vals.iter(), []),
             None
         );
     }
@@ -171,7 +173,7 @@ mod test {
             "alignmentScore",
         ];
         assert_eq!(
-            did_you_mean_flag("alignmentScorr", &[], p_vals.iter(), []),
+            did_you_mean_flag("alignmentScorr", Vec::new(), p_vals.iter(), []),
             Some(("alignmentScore".to_owned(), None))
         );
     }
