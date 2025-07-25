@@ -1,10 +1,9 @@
 //! This module contains traits that are usable with the `#[derive(...)]`
 //! macros in `clap_derive`.
 
-use crate::builder::PossibleValue;
-use crate::{ArgMatches, Command, Error};
-
 use std::ffi::OsString;
+
+use crate::{ArgMatches, Command, Error, builder::PossibleValue};
 
 /// Parse command-line arguments into `Self`.
 ///
@@ -43,7 +42,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
 
     /// Parse from `std::env::args_os()`, return Err on error.
     fn try_parse() -> Result<Self, Error> {
-        let mut matches = ok!(<Self as CommandFactory>::command().try_get_matches());
+        let mut matches = <Self as CommandFactory>::command().try_get_matches()?;
         <Self as FromArgMatches>::from_arg_matches_mut(&mut matches).map_err(format_error::<Self>)
     }
 
@@ -72,7 +71,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let mut matches = ok!(<Self as CommandFactory>::command().try_get_matches_from(itr));
+        let mut matches = <Self as CommandFactory>::command().try_get_matches_from(itr)?;
         <Self as FromArgMatches>::from_arg_matches_mut(&mut matches).map_err(format_error::<Self>)
     }
 
@@ -103,7 +102,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         T: Into<OsString> + Clone,
     {
         let mut matches =
-            ok!(<Self as CommandFactory>::command_for_update().try_get_matches_from(itr));
+            <Self as CommandFactory>::command_for_update().try_get_matches_from(itr)?;
         <Self as FromArgMatches>::update_from_arg_matches_mut(self, &mut matches)
             .map_err(format_error::<Self>)
     }

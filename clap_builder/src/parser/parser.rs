@@ -50,18 +50,18 @@ impl<'cmd> Parser<'cmd> {
     ) -> ClapResult<()> {
         debug!("Parser::get_matches_with");
 
-        ok!(self.parse(matcher, raw_args).inspect_err(|_err| {
+        self.parse(matcher, raw_args).inspect_err(|_err| {
             if self.cmd.is_ignore_errors_set() {
                 #[cfg(feature = "env")]
                 let _ = self.add_env(matcher);
                 let _ = self.add_defaults(matcher);
             }
-        }));
-        ok!(self.resolve_pending(matcher));
+        })?;
+        self.resolve_pending(matcher)?;
 
         #[cfg(feature = "env")]
-        ok!(self.add_env(matcher));
-        ok!(self.add_defaults(matcher));
+        self.add_env(matcher)?;
+        self.add_defaults(matcher)?;
 
         Validator::new(self.cmd).validate(matcher)
     }
@@ -112,7 +112,7 @@ impl<'cmd> Parser<'cmd> {
                     debug!("Parser::get_matches_with: sc={sc_name:?}");
                     if let Some(sc_name) = sc_name {
                         if sc_name == "help" && !self.cmd.is_disable_help_subcommand_set() {
-                            ok!(self.parse_help_subcommand(raw_args.remaining()));
+                            self.parse_help_subcommand(raw_args.remaining())?;
                             unreachable!("`parse_help_subcommand` always errors");
                         } else {
                             subcmd_name = Some(sc_name.to_owned());
@@ -133,14 +133,14 @@ impl<'cmd> Parser<'cmd> {
                         continue;
                     }
                 } else if let Some((long_arg, long_value)) = arg_os.to_long() {
-                    let parse_result = ok!(self.parse_long_arg(
+                    let parse_result = self.parse_long_arg(
                         matcher,
                         long_arg,
                         long_value,
                         &parse_state,
                         pos_counter,
                         &mut valid_arg_found,
-                    ));
+                    )?;
                     debug!("Parser::get_matches_with: After parse_long_arg {parse_result:?}");
                     match parse_result {
                         ParseResult::NoArg => {
@@ -202,13 +202,13 @@ impl<'cmd> Parser<'cmd> {
                     // Try to parse short args like normal, if allow_hyphen_values or
                     // AllowNegativeNumbers is set, parse_short_arg will *not* throw
                     // an error, and instead return Ok(None)
-                    let parse_result = ok!(self.parse_short_arg(
+                    let parse_result = self.parse_short_arg(
                         matcher,
                         short_arg,
                         &parse_state,
                         pos_counter,
                         &mut valid_arg_found,
-                    ));
+                    )?;
                     // If it's None, we then check if one of those two AppSettings was set
                     debug!("Parser::get_matches_with: After parse_short_arg {parse_result:?}");
                     match parse_result {
@@ -394,7 +394,7 @@ impl<'cmd> Parser<'cmd> {
                 }
 
                 if matcher.pending_arg_id() != Some(arg.get_id()) || !arg.is_multiple_values_set() {
-                    ok!(self.resolve_pending(matcher));
+                    self.resolve_pending(matcher)?;
                 }
                 parse_state =
                     if let Some(parse_result) = self.check_terminator(arg, arg_os.to_value_os()) {
@@ -438,12 +438,12 @@ impl<'cmd> Parser<'cmd> {
                 sc_m.start_occurrence_of_external(self.cmd);
 
                 for raw_val in raw_args.remaining() {
-                    let val = ok!(external_parser.parse_ref(
+                    let val = external_parser.parse_ref(
                         self.cmd,
                         None,
                         &raw_val,
-                        ValueSource::CommandLine
-                    ));
+                        ValueSource::CommandLine,
+                    )?;
                     let external_id = Id::from_static_ref(Id::EXTERNAL);
                     sc_m.add_val_to(&external_id, val, raw_val.clone());
                 }
@@ -484,7 +484,7 @@ impl<'cmd> Parser<'cmd> {
                 .expect(INTERNAL_ERROR_MSG)
                 .get_name()
                 .to_owned();
-            ok!(self.parse_subcommand(&sc_name, matcher, raw_args, keep_state));
+            self.parse_subcommand(&sc_name, matcher, raw_args, keep_state)?;
         }
 
         Ok(())
@@ -571,7 +571,7 @@ impl<'cmd> Parser<'cmd> {
         valid_arg_found: bool,
     ) -> Option<&str> {
         debug!("Parser::possible_subcommand: arg={arg:?}");
-        let arg = some!(arg.ok());
+        let arg = arg.ok()?;
 
         if !(self.cmd.is_args_conflicts_with_subcommands_set() && valid_arg_found) {
             if self.cmd.is_infer_subcommands_set() {
@@ -932,14 +932,14 @@ impl<'cmd> Parser<'cmd> {
                 if !arg.is_takes_value_set() {
                     let arg_values = Vec::new();
                     let trailing_idx = None;
-                    ret = ok!(self.react(
+                    ret = self.react(
                         Some(ident),
                         ValueSource::CommandLine,
                         arg,
                         arg_values,
                         trailing_idx,
                         matcher,
-                    ));
+                    )?;
                     continue;
                 }
 
@@ -962,7 +962,7 @@ impl<'cmd> Parser<'cmd> {
                 } else {
                     (val, false)
                 };
-                match ok!(self.parse_opt_value(ident, val, arg, matcher, has_eq)) {
+                match self.parse_opt_value(ident, val, arg, matcher, has_eq)? {
                     ParseResult::AttachedValueNotConsumed => continue,
                     x => return Ok(x),
                 }
@@ -971,7 +971,7 @@ impl<'cmd> Parser<'cmd> {
             return if let Some(sc_name) = self.cmd.find_short_subcmd(c) {
                 debug!("Parser::parse_short_arg:iter:{c}: subcommand={sc_name}");
                 // Make sure indices get updated before reading `self.cur_idx`
-                ok!(self.resolve_pending(matcher));
+                self.resolve_pending(matcher)?;
                 self.cur_idx.set(self.cur_idx.get() + 1);
                 debug!("Parser::parse_short_arg: cur_idx:={}", self.cur_idx.get());
 
@@ -1018,14 +1018,14 @@ impl<'cmd> Parser<'cmd> {
                 debug!("Requires equals, but min_vals == 0");
                 let arg_values = Vec::new();
                 let trailing_idx = None;
-                let react_result = ok!(self.react(
+                let react_result = self.react(
                     Some(ident),
                     ValueSource::CommandLine,
                     arg,
                     arg_values,
                     trailing_idx,
                     matcher,
-                ));
+                )?;
                 debug_assert_eq!(react_result, ParseResult::ValuesDone);
                 if attached_value.is_some() {
                     Ok(ParseResult::AttachedValueNotConsumed)
@@ -1041,20 +1041,20 @@ impl<'cmd> Parser<'cmd> {
         } else if let Some(v) = attached_value {
             let arg_values = vec![v.to_owned()];
             let trailing_idx = None;
-            let react_result = ok!(self.react(
+            let react_result = self.react(
                 Some(ident),
                 ValueSource::CommandLine,
                 arg,
                 arg_values,
                 trailing_idx,
                 matcher,
-            ));
+            )?;
             debug_assert_eq!(react_result, ParseResult::ValuesDone);
             // Attached are always done
             Ok(ParseResult::ValuesDone)
         } else {
             debug!("Parser::parse_opt_value: More arg vals required...");
-            ok!(self.resolve_pending(matcher));
+            self.resolve_pending(matcher)?;
             let trailing_values = false;
             matcher.pending_values_mut(arg.get_id(), Some(ident), trailing_values);
             Ok(ParseResult::Opt(arg.get_id().clone()))
@@ -1087,7 +1087,7 @@ impl<'cmd> Parser<'cmd> {
                 self.cur_idx.get()
             );
             let value_parser = arg.get_value_parser();
-            let val = ok!(value_parser.parse_ref(self.cmd, Some(arg), &raw_val, source));
+            let val = value_parser.parse_ref(self.cmd, Some(arg), &raw_val, source)?;
 
             matcher.add_val_to(arg.get_id(), val, raw_val);
             matcher.add_index_to(arg.get_id(), self.cur_idx.get());
@@ -1106,14 +1106,14 @@ impl<'cmd> Parser<'cmd> {
 
         debug!("Parser::resolve_pending: id={:?}", pending.id);
         let arg = self.cmd.find(&pending.id).expect(INTERNAL_ERROR_MSG);
-        let _ = ok!(self.react(
+        let _ = self.react(
             pending.ident,
             ValueSource::CommandLine,
             arg,
             pending.raw_vals,
             pending.trailing_idx,
             matcher,
-        ));
+        )?;
 
         Ok(())
     }
@@ -1127,7 +1127,7 @@ impl<'cmd> Parser<'cmd> {
         mut trailing_idx: Option<usize>,
         matcher: &mut ArgMatcher,
     ) -> ClapResult<ParseResult> {
-        ok!(self.resolve_pending(matcher));
+        self.resolve_pending(matcher)?;
 
         debug!(
             "Parser::react action={:?}, identifier={:?}, source={:?}",
@@ -1139,7 +1139,7 @@ impl<'cmd> Parser<'cmd> {
         // Process before `default_missing_values` to avoid it counting as values from the command
         // line
         if source == ValueSource::CommandLine {
-            ok!(self.verify_num_args(arg, &raw_vals));
+            self.verify_num_args(arg, &raw_vals)?;
         }
 
         if raw_vals.is_empty() {
@@ -1196,7 +1196,7 @@ impl<'cmd> Parser<'cmd> {
                     ));
                 }
                 self.start_custom_arg(matcher, arg, source);
-                ok!(self.push_arg_values(arg, raw_vals, source, matcher));
+                self.push_arg_values(arg, raw_vals, source, matcher)?;
                 if cfg!(debug_assertions) && matcher.needs_more_vals(arg) {
                     debug!(
                         "Parser::react not enough values passed in, leaving it to the validator to complain",
@@ -1213,7 +1213,7 @@ impl<'cmd> Parser<'cmd> {
                     debug!("Parser::react: cur_idx:={}", self.cur_idx.get());
                 }
                 self.start_custom_arg(matcher, arg, source);
-                ok!(self.push_arg_values(arg, raw_vals, source, matcher));
+                self.push_arg_values(arg, raw_vals, source, matcher)?;
                 if cfg!(debug_assertions) && matcher.needs_more_vals(arg) {
                     debug!(
                         "Parser::react not enough values passed in, leaving it to the validator to complain",
@@ -1239,7 +1239,7 @@ impl<'cmd> Parser<'cmd> {
                     ));
                 }
                 self.start_custom_arg(matcher, arg, source);
-                ok!(self.push_arg_values(arg, raw_vals, source, matcher));
+                self.push_arg_values(arg, raw_vals, source, matcher)?;
                 Ok(ParseResult::ValuesDone)
             }
             ArgAction::SetFalse => {
@@ -1260,7 +1260,7 @@ impl<'cmd> Parser<'cmd> {
                     ));
                 }
                 self.start_custom_arg(matcher, arg, source);
-                ok!(self.push_arg_values(arg, raw_vals, source, matcher));
+                self.push_arg_values(arg, raw_vals, source, matcher)?;
                 Ok(ParseResult::ValuesDone)
             }
             ArgAction::Count => {
@@ -1276,7 +1276,7 @@ impl<'cmd> Parser<'cmd> {
 
                 matcher.remove(arg.get_id());
                 self.start_custom_arg(matcher, arg, source);
-                ok!(self.push_arg_values(arg, raw_vals, source, matcher));
+                self.push_arg_values(arg, raw_vals, source, matcher)?;
                 Ok(ParseResult::ValuesDone)
             }
             ArgAction::Help => {
@@ -1407,14 +1407,14 @@ impl<'cmd> Parser<'cmd> {
                 debug!("Parser::add_env: Found an opt with value={val:?}");
                 let arg_values = vec![val.to_owned()];
                 let trailing_idx = None;
-                let _ = ok!(self.react(
+                let _ = self.react(
                     None,
                     ValueSource::EnvVariable,
                     arg,
                     arg_values,
                     trailing_idx,
                     matcher,
-                ));
+                )?;
             }
         }
 
@@ -1426,7 +1426,7 @@ impl<'cmd> Parser<'cmd> {
 
         for arg in self.cmd.get_arguments() {
             debug!("Parser::add_defaults:iter:{}:", arg.get_id());
-            ok!(self.add_default_value(arg, matcher));
+            self.add_default_value(arg, matcher)?;
         }
 
         Ok(())
@@ -1452,14 +1452,14 @@ impl<'cmd> Parser<'cmd> {
                         if let Some(default) = default {
                             let arg_values = vec![default.to_os_string()];
                             let trailing_idx = None;
-                            let _ = ok!(self.react(
+                            let _ = self.react(
                                 None,
                                 ValueSource::DefaultValue,
                                 arg,
                                 arg_values,
                                 trailing_idx,
                                 matcher,
-                            ));
+                            )?;
                         }
                         return Ok(());
                     }
@@ -1488,14 +1488,14 @@ impl<'cmd> Parser<'cmd> {
                     .map(crate::builder::OsStr::to_os_string)
                     .collect();
                 let trailing_idx = None;
-                let _ = ok!(self.react(
+                let _ = self.react(
                     None,
                     ValueSource::DefaultValue,
                     arg,
                     arg_values,
                     trailing_idx,
                     matcher,
-                ));
+                )?;
             }
         } else {
             debug!(

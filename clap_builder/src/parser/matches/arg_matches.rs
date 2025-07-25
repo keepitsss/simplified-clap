@@ -764,8 +764,8 @@ impl ArgMatches {
     /// [delimiter]: crate::Arg::value_delimiter()
     #[cfg_attr(debug_assertions, track_caller)]
     pub fn index_of(&self, id: &str) -> Option<usize> {
-        let arg = some!(self.get_arg(id));
-        let i = some!(arg.get_index(0));
+        let arg = self.get_arg(id)?;
+        let i = arg.get_index(0)?;
         Some(i)
     }
 
@@ -852,7 +852,7 @@ impl ArgMatches {
     /// [`ArgMatches::index_of`]: ArgMatches::index_of()
     #[cfg_attr(debug_assertions, track_caller)]
     pub fn indices_of(&self, id: &str) -> Option<Indices<'_>> {
-        let arg = some!(self.get_arg(id));
+        let arg = self.get_arg(id)?;
         let i = Indices {
             iter: arg.indices(),
             len: arg.num_vals(),
@@ -1081,7 +1081,7 @@ impl ArgMatches {
         &self,
         id: &str,
     ) -> Result<Option<&T>, MatchesError> {
-        let arg = ok!(self.try_get_arg_t::<T>(id));
+        let arg = self.try_get_arg_t::<T>(id)?;
         let value = match arg.and_then(|a| a.first()) {
             Some(value) => value,
             None => {
@@ -1099,7 +1099,7 @@ impl ArgMatches {
         &self,
         id: &str,
     ) -> Result<Option<ValuesRef<'_, T>>, MatchesError> {
-        let arg = match ok!(self.try_get_arg_t::<T>(id)) {
+        let arg = match self.try_get_arg_t::<T>(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1118,7 +1118,7 @@ impl ArgMatches {
         &self,
         id: &str,
     ) -> Result<Option<OccurrencesRef<'_, T>>, MatchesError> {
-        let arg = match ok!(self.try_get_arg_t::<T>(id)) {
+        let arg = match self.try_get_arg_t::<T>(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1132,7 +1132,7 @@ impl ArgMatches {
 
     /// Non-panicking version of [`ArgMatches::get_raw`]
     pub fn try_get_raw(&self, id: &str) -> Result<Option<RawValues<'_>>, MatchesError> {
-        let arg = match ok!(self.try_get_arg(id)) {
+        let arg = match self.try_get_arg(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1150,7 +1150,7 @@ impl ArgMatches {
         &self,
         id: &str,
     ) -> Result<Option<RawOccurrences<'_>>, MatchesError> {
-        let arg = match ok!(self.try_get_arg(id)) {
+        let arg = match self.try_get_arg(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1168,7 +1168,7 @@ impl ArgMatches {
         &mut self,
         id: &str,
     ) -> Result<Option<T>, MatchesError> {
-        match ok!(self.try_remove_arg_t::<T>(id)) {
+        match self.try_remove_arg_t::<T>(id)? {
             Some(values) => Ok(values
                 .into_vals_flatten()
                 // enforced by `try_get_arg_t`
@@ -1183,7 +1183,7 @@ impl ArgMatches {
         &mut self,
         id: &str,
     ) -> Result<Option<Values<T>>, MatchesError> {
-        let arg = match ok!(self.try_remove_arg_t::<T>(id)) {
+        let arg = match self.try_remove_arg_t::<T>(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1202,7 +1202,7 @@ impl ArgMatches {
         &mut self,
         id: &str,
     ) -> Result<Option<Occurrences<T>>, MatchesError> {
-        let arg = match ok!(self.try_remove_arg_t::<T>(id)) {
+        let arg = match self.try_remove_arg_t::<T>(id)? {
             Some(arg) => arg,
             None => return Ok(None),
         };
@@ -1217,7 +1217,7 @@ impl ArgMatches {
 
     /// Non-panicking version of [`ArgMatches::contains_id`]
     pub fn try_contains_id(&self, id: &str) -> Result<bool, MatchesError> {
-        ok!(self.verify_arg(id));
+        self.verify_arg(id)?;
 
         let presence = self.args.contains_key(id);
         Ok(presence)
@@ -1231,7 +1231,7 @@ impl ArgMatches {
     ///
     /// Returns `Ok(true)` if there were any matches with the given `id`, `Ok(false)` otherwise.
     pub fn try_clear_id(&mut self, id: &str) -> Result<bool, MatchesError> {
-        ok!(self.verify_arg(id));
+        self.verify_arg(id)?;
         Ok(self.args.remove_entry(id).is_some())
     }
 }
@@ -1240,7 +1240,7 @@ impl ArgMatches {
 impl ArgMatches {
     #[inline]
     fn try_get_arg(&self, arg: &str) -> Result<Option<&MatchedArg>, MatchesError> {
-        ok!(self.verify_arg(arg));
+        self.verify_arg(arg)?;
         Ok(self.args.get(arg))
     }
 
@@ -1249,13 +1249,13 @@ impl ArgMatches {
         &self,
         arg: &str,
     ) -> Result<Option<&MatchedArg>, MatchesError> {
-        let arg = match ok!(self.try_get_arg(arg)) {
+        let arg = match self.try_get_arg(arg)? {
             Some(arg) => arg,
             None => {
                 return Ok(None);
             }
         };
-        ok!(self.verify_arg_t::<T>(arg));
+        self.verify_arg_t::<T>(arg)?;
         Ok(Some(arg))
     }
 
@@ -1264,7 +1264,7 @@ impl ArgMatches {
         &mut self,
         arg: &str,
     ) -> Result<Option<MatchedArg>, MatchesError> {
-        ok!(self.verify_arg(arg));
+        self.verify_arg(arg)?;
         let (id, matched) = match self.args.remove_entry(arg) {
             Some((id, matched)) => (id, matched),
             None => {

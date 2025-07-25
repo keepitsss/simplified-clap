@@ -1,14 +1,12 @@
 // Internal
-use crate::builder::StyledStr;
-use crate::builder::{Arg, ArgGroup, ArgPredicate, Command, PossibleValue};
-use crate::error::{Error, Result as ClapResult};
-use crate::output::Usage;
-use crate::parser::ArgMatcher;
-use crate::util::ChildGraph;
-use crate::util::FlatMap;
-use crate::util::FlatSet;
-use crate::util::Id;
-use crate::INTERNAL_ERROR_MSG;
+use crate::{
+    INTERNAL_ERROR_MSG,
+    builder::{Arg, ArgGroup, ArgPredicate, Command, PossibleValue, StyledStr},
+    error::{Error, Result as ClapResult},
+    output::Usage,
+    parser::ArgMatcher,
+    util::{ChildGraph, FlatMap, FlatSet, Id},
+};
 
 pub(crate) struct Validator<'cmd> {
     cmd: &'cmd Command,
@@ -51,9 +49,9 @@ impl<'cmd> Validator<'cmd> {
             ));
         }
 
-        ok!(self.validate_conflicts(matcher, &conflicts));
+        self.validate_conflicts(matcher, &conflicts)?;
         if !(self.cmd.is_subcommand_negates_reqs_set() && has_subcmd) {
-            ok!(self.validate_required(matcher, &conflicts));
+            self.validate_required(matcher, &conflicts)?;
         }
 
         Ok(())
@@ -66,7 +64,7 @@ impl<'cmd> Validator<'cmd> {
     ) -> ClapResult<()> {
         debug!("Validator::validate_conflicts");
 
-        ok!(self.validate_exclusive(matcher));
+        self.validate_exclusive(matcher)?;
 
         for (arg_id, _) in matcher
             .args()
@@ -75,7 +73,7 @@ impl<'cmd> Validator<'cmd> {
         {
             debug!("Validator::validate_conflicts::iter: id={arg_id:?}");
             let conflicts = conflicts.gather_conflicts(self.cmd, arg_id);
-            ok!(self.build_conflict_err(arg_id, &conflicts, matcher));
+            self.build_conflict_err(arg_id, &conflicts, matcher)?;
         }
 
         Ok(())
@@ -335,7 +333,7 @@ impl<'cmd> Validator<'cmd> {
         }
 
         if !missing_required.is_empty() {
-            ok!(self.missing_required_error(matcher, missing_required));
+            self.missing_required_error(matcher, missing_required)?;
         }
 
         Ok(())

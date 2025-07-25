@@ -65,11 +65,11 @@ impl<K: PartialEq + Eq, V> FlatMap<K, V> {
         K: Borrow<Q>,
         Q: std::hash::Hash + Eq,
     {
-        let index = some!(self
+        let index = self
             .keys
             .iter()
             .enumerate()
-            .find_map(|(i, k)| (k.borrow() == key).then_some(i)));
+            .find_map(|(i, k)| (k.borrow() == key).then_some(i))?;
         let key = self.keys.remove(index);
         let value = self.values.remove(index);
         Some((key, value))

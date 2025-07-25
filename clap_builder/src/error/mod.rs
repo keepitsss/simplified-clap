@@ -18,34 +18,31 @@ use std::{
 
 // Internal
 use crate::builder::StyledStr;
-use crate::builder::Styles;
-use crate::output::fmt::Colorizer;
-use crate::output::fmt::Stream;
-use crate::parser::features::suggestions;
-use crate::util::FlatMap;
-use crate::util::{color::ColorChoice, SUCCESS_CODE, USAGE_CODE};
-use crate::Command;
+use crate::{
+    Command,
+    builder::Styles,
+    output::fmt::{Colorizer, Stream},
+    parser::features::suggestions,
+    util::{FlatMap, SUCCESS_CODE, USAGE_CODE, color::ColorChoice},
+};
 
 #[cfg(feature = "error-context")]
 mod context;
 mod format;
 mod kind;
 
-pub use format::ErrorFormatter;
-pub use format::KindFormatter;
-pub use kind::ErrorKind;
-
+#[cfg(not(feature = "error-context"))]
+pub use KindFormatter as DefaultFormatter;
+#[cfg(feature = "error-context")]
+pub use RichFormatter as DefaultFormatter;
 #[cfg(feature = "error-context")]
 pub use context::ContextKind;
 #[cfg(feature = "error-context")]
 pub use context::ContextValue;
 #[cfg(feature = "error-context")]
 pub use format::RichFormatter;
-
-#[cfg(not(feature = "error-context"))]
-pub use KindFormatter as DefaultFormatter;
-#[cfg(feature = "error-context")]
-pub use RichFormatter as DefaultFormatter;
+pub use format::{ErrorFormatter, KindFormatter};
+pub use kind::ErrorKind;
 
 /// Short hand for [`Result`] type
 ///
@@ -843,11 +840,11 @@ impl<F: ErrorFormatter> error::Error for Error<F> {
 impl<F: ErrorFormatter> Display for Error<F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // Assuming `self.message` already has a trailing newline, from `try_help` or similar
-        ok!(write!(f, "{}", self.formatted()));
+        write!(f, "{}", self.formatted())?;
         if let Some(backtrace) = self.inner.backtrace.as_ref() {
-            ok!(writeln!(f));
-            ok!(writeln!(f, "Backtrace:"));
-            ok!(writeln!(f, "{backtrace}"));
+            writeln!(f)?;
+            writeln!(f, "Backtrace:")?;
+            writeln!(f, "{backtrace}")?;
         }
         Ok(())
     }

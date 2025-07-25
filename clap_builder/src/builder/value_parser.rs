@@ -1,11 +1,10 @@
-use std::convert::TryInto;
-use std::ops::RangeBounds;
+use std::{convert::TryInto, ops::RangeBounds};
 
-use crate::builder::Str;
-use crate::builder::StyledStr;
-use crate::parser::ValueSource;
-use crate::util::AnyValue;
-use crate::util::AnyValueId;
+use crate::{
+    builder::{Str, StyledStr},
+    parser::ValueSource,
+    util::{AnyValue, AnyValueId},
+};
 
 /// Parse/validate argument values
 ///
@@ -627,7 +626,7 @@ where
         arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<AnyValue, crate::Error> {
-        let value = ok!(TypedValueParser::parse_ref(self, cmd, arg, value));
+        let value = TypedValueParser::parse_ref(self, cmd, arg, value)?;
         Ok(AnyValue::new(value))
     }
 
@@ -638,7 +637,7 @@ where
         value: &std::ffi::OsStr,
         source: ValueSource,
     ) -> Result<AnyValue, crate::Error> {
-        let value = ok!(TypedValueParser::parse_ref_(self, cmd, arg, value, source));
+        let value = TypedValueParser::parse_ref_(self, cmd, arg, value, source)?;
         Ok(AnyValue::new(value))
     }
 
@@ -881,18 +880,18 @@ where
         arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(value.to_str().ok_or_else(|| {
+        let value = value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
-        let value = ok!((self)(value).map_err(|e| {
+        })?;
+        let value = (self)(value).map_err(|e| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
             crate::Error::value_validation(arg, value.to_owned(), e.into()).with_cmd(cmd)
-        }));
+        })?;
         Ok(value)
     }
 }
@@ -929,12 +928,12 @@ impl TypedValueParser for StringValueParser {
         _arg: Option<&crate::Arg>,
         value: std::ffi::OsString,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(value.into_string().map_err(|_| {
+        let value = value.into_string().map_err(|_| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
+        })?;
         Ok(value)
     }
 }
@@ -1107,7 +1106,7 @@ impl<E: crate::ValueEnum + Clone + Send + Sync + 'static> TypedValueParser for E
                 .collect::<Vec<_>>()
         };
 
-        let value = ok!(value.to_str().ok_or_else(|| {
+        let value = value.to_str().ok_or_else(|| {
             crate::Error::invalid_value(
                 cmd,
                 value.to_string_lossy().into_owned(),
@@ -1115,8 +1114,8 @@ impl<E: crate::ValueEnum + Clone + Send + Sync + 'static> TypedValueParser for E
                 arg.map(ToString::to_string)
                     .unwrap_or_else(|| "...".to_owned()),
             )
-        }));
-        let value = ok!(E::value_variants()
+        })?;
+        let value = E::value_variants()
             .iter()
             .find(|v| {
                 v.to_possible_value()
@@ -1131,7 +1130,7 @@ impl<E: crate::ValueEnum + Clone + Send + Sync + 'static> TypedValueParser for E
                 arg.map(ToString::to_string)
                     .unwrap_or_else(|| "...".to_owned()),
             )
-            }))
+            })?
             .clone();
         Ok(value)
     }
@@ -1220,12 +1219,12 @@ impl TypedValueParser for PossibleValuesParser {
         arg: Option<&crate::Arg>,
         value: std::ffi::OsString,
     ) -> Result<String, crate::Error> {
-        let value = ok!(value.into_string().map_err(|_| {
+        let value = value.into_string().map_err(|_| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
+        })?;
 
         let ignore_case = arg.map(|a| a.is_ignore_case_set()).unwrap_or(false);
         if self.0.iter().any(|v| v.matches(&value, ignore_case)) {
@@ -1409,13 +1408,13 @@ where
         arg: Option<&crate::Arg>,
         raw_value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(raw_value.to_str().ok_or_else(|| {
+        let value = raw_value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
-        let value = ok!(value.parse::<i64>().map_err(|err| {
+        })?;
+        let value = value.parse::<i64>().map_err(|err| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
@@ -1425,7 +1424,7 @@ where
                 err.into(),
             )
             .with_cmd(cmd)
-        }));
+        })?;
         if !self.bounds.contains(&value) {
             let arg = arg
                 .map(|a| a.to_string())
@@ -1439,7 +1438,7 @@ where
         }
 
         let value: Result<Self::Value, _> = value.try_into();
-        let value = ok!(value.map_err(|err| {
+        let value = value.map_err(|err| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
@@ -1449,7 +1448,7 @@ where
                 err.into(),
             )
             .with_cmd(cmd)
-        }));
+        })?;
 
         Ok(value)
     }
@@ -1608,13 +1607,13 @@ where
         arg: Option<&crate::Arg>,
         raw_value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(raw_value.to_str().ok_or_else(|| {
+        let value = raw_value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
-        let value = ok!(value.parse::<u64>().map_err(|err| {
+        })?;
+        let value = value.parse::<u64>().map_err(|err| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
@@ -1624,7 +1623,7 @@ where
                 err.into(),
             )
             .with_cmd(cmd)
-        }));
+        })?;
         if !self.bounds.contains(&value) {
             let arg = arg
                 .map(|a| a.to_string())
@@ -1638,7 +1637,7 @@ where
         }
 
         let value: Result<Self::Value, _> = value.try_into();
-        let value = ok!(value.map_err(|err| {
+        let value = value.map_err(|err| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
@@ -1648,7 +1647,7 @@ where
                 err.into(),
             )
             .with_cmd(cmd)
-        }));
+        })?;
 
         Ok(value)
     }
@@ -1801,12 +1800,12 @@ impl TypedValueParser for FalseyValueParser {
         _arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(value.to_str().ok_or_else(|| {
+        let value = value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
+        })?;
         let value = if value.is_empty() {
             false
         } else {
@@ -1900,19 +1899,19 @@ impl TypedValueParser for BoolishValueParser {
         arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(value.to_str().ok_or_else(|| {
+        let value = value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
-        let value = ok!(crate::util::str_to_bool(value).ok_or_else(|| {
+        })?;
+        let value = crate::util::str_to_bool(value).ok_or_else(|| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
             crate::Error::value_validation(arg, value.to_owned(), "value was not a boolean".into())
                 .with_cmd(cmd)
-        }));
+        })?;
         Ok(value)
     }
 
@@ -1991,12 +1990,12 @@ impl TypedValueParser for NonEmptyStringValueParser {
                     .unwrap_or_else(|| "...".to_owned()),
             ));
         }
-        let value = ok!(value.to_str().ok_or_else(|| {
+        let value = value.to_str().ok_or_else(|| {
             crate::Error::invalid_utf8(
                 cmd,
                 crate::output::Usage::new(cmd).create_usage_with_title(&[]),
             )
-        }));
+        })?;
         Ok(value.to_owned())
     }
 }
@@ -2043,7 +2042,7 @@ where
         arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(self.parser.parse_ref(cmd, arg, value));
+        let value = self.parser.parse_ref(cmd, arg, value)?;
         let value = (self.func)(value);
         Ok(value)
     }
@@ -2054,7 +2053,7 @@ where
         arg: Option<&crate::Arg>,
         value: std::ffi::OsString,
     ) -> Result<Self::Value, crate::Error> {
-        let value = ok!(self.parser.parse(cmd, arg, value));
+        let value = self.parser.parse(cmd, arg, value)?;
         let value = (self.func)(value);
         Ok(value)
     }
@@ -2104,14 +2103,14 @@ where
         arg: Option<&crate::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, crate::Error> {
-        let mid_value = ok!(self.parser.parse_ref(cmd, arg, value));
-        let value = ok!((self.func)(mid_value).map_err(|e| {
+        let mid_value = self.parser.parse_ref(cmd, arg, value)?;
+        let value = (self.func)(mid_value).map_err(|e| {
             let arg = arg
                 .map(|a| a.to_string())
                 .unwrap_or_else(|| "...".to_owned());
             crate::Error::value_validation(arg, value.to_string_lossy().into_owned(), e.into())
                 .with_cmd(cmd)
-        }));
+        })?;
         Ok(value)
     }
 

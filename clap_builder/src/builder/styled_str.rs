@@ -143,7 +143,7 @@ impl StyledStr {
     }
 
     pub(crate) fn write_to(&self, buffer: &mut dyn std::io::Write) -> std::io::Result<()> {
-        ok!(buffer.write_all(self.0.as_bytes()));
+        buffer.write_all(self.0.as_bytes())?;
 
         Ok(())
     }
