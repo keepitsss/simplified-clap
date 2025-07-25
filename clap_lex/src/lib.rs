@@ -125,7 +125,8 @@ pub use ext::OsStrExt;
 /// Command-line arguments wrapper
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct RawArgs {
-    items: Vec<OsString>,
+    /// some args, mb not all
+    pub items: Vec<OsString>,
 }
 
 impl RawArgs {
@@ -178,27 +179,6 @@ impl RawArgs {
     /// ```
     pub fn remaining(self, cursor: usize) -> Vec<OsString> {
         self.items[cursor..].to_owned()
-    }
-
-    /// Adjust the cursor's position
-    pub fn seek(&self, cursor: &mut usize, pos: SeekFrom) {
-        let pos = match pos {
-            SeekFrom::Start(pos) => pos,
-            SeekFrom::End(pos) => (self.items.len() as i64).saturating_add(pos).max(0) as u64,
-            SeekFrom::Current(pos) => (*cursor as i64).saturating_add(pos).max(0) as u64,
-        };
-        let pos = (pos as usize).min(self.items.len());
-        *cursor = pos;
-    }
-
-    /// Inject arguments before the [`RawArgs::next`]
-    pub fn insert(
-        &mut self,
-        cursor: usize,
-        insert_items: impl IntoIterator<Item = impl Into<OsString>>,
-    ) {
-        self.items
-            .splice(cursor..cursor, insert_items.into_iter().map(Into::into));
     }
 
     /// Any remaining args?

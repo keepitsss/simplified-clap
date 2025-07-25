@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use clap::{arg, error::ErrorKind, Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, Command, arg, error::ErrorKind};
 
 use super::utils;
 

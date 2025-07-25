@@ -232,9 +232,8 @@ impl<'cmd> Parser<'cmd> {
                             // revisit the current group of short flags skipping the subcommand.
                             keep_state = self
                                 .flag_subcmd_at
-                                .map(|at| {
-                                    raw_args
-                                        .seek(&mut args_cursor, clap_lex::SeekFrom::Current(-1));
+                                .inspect(|at| {
+                                    args_cursor = args_cursor.saturating_sub(1);
                                     // Since we are now saving the current state, the number of flags to skip during state recovery should
                                     // be the current index (`cur_idx`) minus ONE UNIT TO THE LEFT of the starting position.
                                     self.flag_subcmd_skip = self.cur_idx.get() - at + 1;

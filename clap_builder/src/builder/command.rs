@@ -819,7 +819,10 @@ impl Command {
             debug!(
                 "Command::try_get_matches_from_mut: Reinserting command into arguments so subcommand parser matches it"
             );
-            raw_args.insert(cursor, [&command]);
+
+            // SAFETY: First argument is executable name, so we can change items at pos 0 instead of adding it.
+            raw_args.items[0] = OsString::from(command);
+            cursor = 0;
             debug!(
                 "Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name"
             );
