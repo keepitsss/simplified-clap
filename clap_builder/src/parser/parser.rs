@@ -47,19 +47,16 @@ impl<'cmd> Parser<'cmd> {
         &mut self,
         matcher: &mut ArgMatcher,
         raw_args: clap_lex::RawArgs,
-        args_cursor: usize,
     ) -> ClapResult<()> {
         debug!("Parser::get_matches_with");
 
-        ok!(self
-            .parse(matcher, raw_args, args_cursor)
-            .inspect_err(|_err| {
-                if self.cmd.is_ignore_errors_set() {
-                    #[cfg(feature = "env")]
-                    let _ = self.add_env(matcher);
-                    let _ = self.add_defaults(matcher);
-                }
-            }));
+        ok!(self.parse(matcher, raw_args).inspect_err(|_err| {
+            if self.cmd.is_ignore_errors_set() {
+                #[cfg(feature = "env")]
+                let _ = self.add_env(matcher);
+                let _ = self.add_defaults(matcher);
+            }
+        }));
         ok!(self.resolve_pending(matcher));
 
         #[cfg(feature = "env")]
@@ -74,8 +71,7 @@ impl<'cmd> Parser<'cmd> {
     pub(crate) fn parse(
         &mut self,
         matcher: &mut ArgMatcher,
-        raw_args: clap_lex::RawArgs,
-        mut args_cursor: usize,
+        mut raw_args: clap_lex::RawArgs,
     ) -> ClapResult<()> {
         debug!("Parser::parse");
         // Verify all positional assertions pass
@@ -100,7 +96,7 @@ impl<'cmd> Parser<'cmd> {
         // If any arg sets .last(true)
         let contains_last = self.cmd.get_arguments().any(|x| x.is_last_set());
 
-        while let Some(arg_os) = raw_args.next(&mut args_cursor) {
+        while let Some(arg_os) = raw_args.next_arg() {
             debug!(
                 "Parser::get_matches_with: Begin parsing '{:?}'",
                 arg_os.to_value_os(),
@@ -116,7 +112,7 @@ impl<'cmd> Parser<'cmd> {
                     debug!("Parser::get_matches_with: sc={sc_name:?}");
                     if let Some(sc_name) = sc_name {
                         if sc_name == "help" && !self.cmd.is_disable_help_subcommand_set() {
-                            ok!(self.parse_help_subcommand(raw_args.remaining(args_cursor)));
+                            ok!(self.parse_help_subcommand(raw_args.remaining()));
                             unreachable!("`parse_help_subcommand` always errors");
                         } else {
                             subcmd_name = Some(sc_name.to_owned());
@@ -176,7 +172,7 @@ impl<'cmd> Parser<'cmd> {
                         }
                         ParseResult::NoMatchingArg { arg } => {
                             let _ = self.resolve_pending(matcher);
-                            let remaining_args: Vec<_> = raw_args.remaining(args_cursor);
+                            let remaining_args: Vec<_> = raw_args.remaining();
                             return Err(self.did_you_mean_error(
                                 &arg,
                                 matcher,
@@ -233,7 +229,7 @@ impl<'cmd> Parser<'cmd> {
                             keep_state = self
                                 .flag_subcmd_at
                                 .inspect(|at| {
-                                    args_cursor = args_cursor.saturating_sub(1);
+                                    raw_args.cursor = raw_args.cursor.saturating_sub(1);
                                     // Since we are now saving the current state, the number of flags to skip during state recovery should
                                     // be the current index (`cur_idx`) minus ONE UNIT TO THE LEFT of the starting position.
                                     self.flag_subcmd_skip = self.cur_idx.get() - at + 1;
@@ -338,7 +334,7 @@ impl<'cmd> Parser<'cmd> {
                 debug!("Parser::get_matches_with: Low index multiples...{low_index_mults:?}");
 
                 if (low_index_mults || missing_pos) && !is_terminated {
-                    let skip_current = if let Some(n) = raw_args.peek(args_cursor) {
+                    let skip_current = if let Some(n) = raw_args.peek_arg() {
                         if let Some(arg) = self
                             .cmd
                             .get_positionals()
@@ -441,7 +437,7 @@ impl<'cmd> Parser<'cmd> {
                 let mut sc_m = ArgMatcher::new(self.cmd);
                 sc_m.start_occurrence_of_external(self.cmd);
 
-                for raw_val in raw_args.remaining(args_cursor) {
+                for raw_val in raw_args.remaining() {
                     let val = ok!(external_parser.parse_ref(
                         self.cmd,
                         None,
@@ -488,7 +484,7 @@ impl<'cmd> Parser<'cmd> {
                 .expect(INTERNAL_ERROR_MSG)
                 .get_name()
                 .to_owned();
-            ok!(self.parse_subcommand(&sc_name, matcher, raw_args, args_cursor, keep_state));
+            ok!(self.parse_subcommand(&sc_name, matcher, raw_args, keep_state));
         }
 
         Ok(())
@@ -703,7 +699,6 @@ impl<'cmd> Parser<'cmd> {
         sc_name: &str,
         matcher: &mut ArgMatcher,
         raw_args: clap_lex::RawArgs,
-        args_cursor: usize,
         keep_state: bool,
     ) -> ClapResult<()> {
         debug!("Parser::parse_subcommand");
@@ -727,7 +722,7 @@ impl<'cmd> Parser<'cmd> {
                     p.flag_subcmd_at = self.flag_subcmd_at;
                     p.flag_subcmd_skip = self.flag_subcmd_skip;
                 }
-                if let Err(error) = p.get_matches_with(&mut sc_matcher, raw_args, args_cursor) {
+                if let Err(error) = p.get_matches_with(&mut sc_matcher, raw_args) {
                     if partial_parsing_enabled {
                         debug!(
                             "Parser::parse_subcommand: ignored error in subcommand {sc_name}: {error:?}"

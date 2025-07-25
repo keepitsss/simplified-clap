@@ -128,34 +128,36 @@ pub use ext::OsStrExt;
 pub struct RawArgs<'a> {
     /// some args, mb not all
     pub items: Vec<&'a OsStr>,
+    /// points to current item
+    pub cursor: usize,
 }
 
-impl RawArgs<'_> {
+impl<'a> RawArgs<'a> {
     /// Advance the cursor, returning the next [`ParsedArg`]
-    pub fn next(&self, cursor: &mut usize) -> Option<ParsedArg<'_>> {
-        self.next_os(cursor).map(ParsedArg::new)
+    pub fn next_arg(&mut self) -> Option<ParsedArg<'a>> {
+        self.next_os_str().map(ParsedArg::new)
     }
 
     /// Advance the cursor, returning a raw argument value.
-    pub fn next_os(&self, cursor: &mut usize) -> Option<&OsStr> {
-        let next = self.items.get(*cursor).copied();
-        *cursor = cursor.saturating_add(1);
+    pub fn next_os_str(&mut self) -> Option<&'a OsStr> {
+        let next = self.items.get_mut(self.cursor).copied();
+        self.cursor = self.cursor.saturating_add(1);
         next
     }
 
     /// Return the next [`ParsedArg`]
-    pub fn peek(&self, cursor: usize) -> Option<ParsedArg<'_>> {
-        self.peek_os(cursor).map(ParsedArg::new)
+    pub fn peek_arg(&self) -> Option<ParsedArg<'_>> {
+        self.peek_os_str().map(ParsedArg::new)
     }
 
     /// Return a raw argument value.
-    pub fn peek_os(&self, cursor: usize) -> Option<&OsStr> {
-        self.items.get(cursor).copied()
+    pub fn peek_os_str(&self) -> Option<&OsStr> {
+        self.items.get(self.cursor).copied()
     }
 
     /// Return all remaining raw arguments, advancing the cursor to the end
-    pub fn remaining(self, cursor: usize) -> Vec<OsString> {
-        self.items[cursor..]
+    pub fn remaining(self) -> Vec<OsString> {
+        self.items[self.cursor..]
             .iter()
             .map(|x| x.to_os_string())
             .collect()
@@ -168,7 +170,7 @@ impl<'a> RawArgs<'a> {
         let args = itr.into_iter().map(|x| x.into()).collect::<Vec<OsString>>();
         let args = Box::leak(args.into_boxed_slice());
         let items = args.iter().map(|x| x.as_os_str()).collect::<Vec<_>>();
-        Self { items }
+        Self { items, cursor: 0 }
     }
 }
 
@@ -176,6 +178,7 @@ impl<'a> FromIterator<&'a OsStr> for RawArgs<'a> {
     fn from_iter<T: IntoIterator<Item = &'a OsStr>>(iter: T) -> Self {
         Self {
             items: iter.into_iter().collect(),
+            cursor: 0,
         }
     }
 }
@@ -286,7 +289,7 @@ impl<'s> ParsedArg<'s> {
     /// Safely print an argument that may contain non-UTF8 content
     ///
     /// This may perform lossy conversion, depending on the platform. If you would like an implementation which escapes the path please use Debug instead.
-    pub fn display(&self) -> impl std::fmt::Display + '_ {
+    pub fn display(&self) -> impl std::fmt::Display + use<'_> {
         self.inner.to_string_lossy()
     }
 }

@@ -810,16 +810,15 @@ impl Command {
             .iter()
             .map(|x| x.as_os_str())
             .collect::<clap_lex::RawArgs>();
-        let mut cursor = 0;
 
         if self.settings.is_set(AppSettings::Multicall)
-            && let Some(argv0) = raw_args.next_os(&mut cursor)
+            && let Some(argv0) = raw_args.next_os_str()
             && let Some(command) = Path::new(argv0).file_stem()
         {
             let command = command.to_owned();
             // SAFETY: First argument is executable name, so we can change items at pos 0 instead of adding it.
             raw_args.items[0] = &command;
-            cursor = 0;
+            raw_args.cursor = 0;
             debug!("Command::try_get_matches_from_mut: Parsed command {command} from argv");
             debug!(
                 "Command::try_get_matches_from_mut: Reinserting command into arguments so subcommand parser matches it"
@@ -829,11 +828,11 @@ impl Command {
             );
             self.name = "".into();
             self.bin_name = None;
-            return self._do_parse(raw_args, cursor);
+            return self._do_parse(raw_args);
         };
 
         if !self.settings.is_set(AppSettings::NoBinaryName)
-            && let Some(name) = raw_args.next_os(&mut cursor)
+            && let Some(name) = raw_args.next_os_str()
             && let Some(f) = Path::new(name).file_name()
             && let Some(s) = f.to_str()
             && self.bin_name.is_none()
@@ -841,7 +840,7 @@ impl Command {
             self.bin_name = Some(s.to_owned());
         }
 
-        self._do_parse(raw_args, cursor)
+        self._do_parse(raw_args)
     }
 
     /// Prints the short help message (`-h`) to [`io::stdout()`].
@@ -4248,11 +4247,7 @@ impl Command {
         }
     }
 
-    fn _do_parse(
-        &mut self,
-        raw_args: clap_lex::RawArgs<'_>,
-        args_cursor: usize,
-    ) -> ClapResult<ArgMatches> {
+    fn _do_parse(&mut self, raw_args: clap_lex::RawArgs<'_>) -> ClapResult<ArgMatches> {
         debug!("Command::_do_parse");
 
         // If there are global arguments, or settings we need to propagate them down to subcommands
@@ -4263,7 +4258,7 @@ impl Command {
 
         // do the real parsing
         let mut parser = Parser::new(self);
-        if let Err(error) = parser.get_matches_with(&mut matcher, raw_args, args_cursor) {
+        if let Err(error) = parser.get_matches_with(&mut matcher, raw_args) {
             if self.is_set(AppSettings::IgnoreErrors) && error.use_stderr() {
                 debug!("Command::_do_parse: ignoring error: {error}");
             } else {

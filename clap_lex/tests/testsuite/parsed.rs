@@ -4,10 +4,9 @@ use std::ffi::OsStr;
 // the start of a long because there is no valid value to return.
 #[test]
 fn to_long_stdio() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_long());
 
@@ -16,10 +15,9 @@ fn to_long_stdio() {
 
 #[test]
 fn to_long_no_escape() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_long());
 
@@ -28,10 +26,9 @@ fn to_long_no_escape() {
 
 #[test]
 fn to_long_no_value() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--long"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--long"]);
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_long());
 
@@ -42,10 +39,9 @@ fn to_long_no_value() {
 
 #[test]
 fn to_long_with_empty_value() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--long="]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--long="]);
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_long());
 
@@ -56,10 +52,10 @@ fn to_long_with_empty_value() {
 
 #[test]
 fn to_long_with_value() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--long=hello"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--long=hello"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_long());
 
@@ -70,10 +66,10 @@ fn to_long_with_value() {
 
 #[test]
 fn to_short_stdio() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_short());
 
@@ -82,10 +78,10 @@ fn to_short_stdio() {
 
 #[test]
 fn to_short_escape() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_short());
 
@@ -94,10 +90,10 @@ fn to_short_escape() {
 
 #[test]
 fn to_short_long() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--long"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--long"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_short());
 
@@ -106,10 +102,10 @@ fn to_short_long() {
 
 #[test]
 fn to_short() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "-short"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "-short"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_short());
 
@@ -121,10 +117,10 @@ fn to_short() {
 #[test]
 fn is_negative_number() {
     for number in ["-10.0", "-1", "-100", "-3.5", "-1e10", "-1.3e10", "-1E10"] {
-        let raw = clap_lex::RawArgs::leaking_from(["bin", number]);
-        let mut cursor = 0;
-        assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-        let next = raw.next(&mut cursor).unwrap();
+        let mut raw = clap_lex::RawArgs::leaking_from(["bin", number]);
+
+        assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+        let next = raw.next_arg().unwrap();
 
         assert!(next.is_negative_number());
     }
@@ -132,10 +128,10 @@ fn is_negative_number() {
 
 #[test]
 fn is_positive_number() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "10.0"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "10.0"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_negative_number());
 }
@@ -145,10 +141,10 @@ fn is_not_number() {
     for number in [
         "--10.0", "-..", "-2..", "-e", "-1e", "-1e10.2", "-.2", "-E", "-1E", "-1E10.2",
     ] {
-        let raw = clap_lex::RawArgs::leaking_from(["bin", number]);
-        let mut cursor = 0;
-        assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-        let next = raw.next(&mut cursor).unwrap();
+        let mut raw = clap_lex::RawArgs::leaking_from(["bin", number]);
+
+        assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+        let next = raw.next_arg().unwrap();
 
         assert!(
             !next.is_negative_number(),
@@ -159,40 +155,40 @@ fn is_not_number() {
 
 #[test]
 fn is_stdio() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_stdio());
 }
 
 #[test]
 fn is_not_stdio() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_stdio());
 }
 
 #[test]
 fn is_escape() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "--"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(next.is_escape());
 }
 
 #[test]
 fn is_not_escape() {
-    let raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
-    let mut cursor = 0;
-    assert_eq!(raw.next_os(&mut cursor), Some(OsStr::new("bin")));
-    let next = raw.next(&mut cursor).unwrap();
+    let mut raw = clap_lex::RawArgs::leaking_from(["bin", "-"]);
+
+    assert_eq!(raw.next_os_str(), Some(OsStr::new("bin")));
+    let next = raw.next_arg().unwrap();
 
     assert!(!next.is_escape());
 }
