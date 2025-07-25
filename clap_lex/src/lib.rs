@@ -124,12 +124,12 @@ pub use ext::OsStrExt;
 
 /// Command-line arguments wrapper
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
-pub struct RawArgs {
+pub struct RawArgs<'a> {
     /// some args, mb not all
-    pub items: Vec<OsString>,
+    pub items: Vec<&'a OsStr>,
 }
 
-impl RawArgs {
+impl RawArgs<'_> {
     /// Advance the cursor, returning the next [`ParsedArg`]
     pub fn next(&self, cursor: &mut usize) -> Option<ParsedArg<'_>> {
         self.next_os(cursor).map(ParsedArg::new)
@@ -137,7 +137,7 @@ impl RawArgs {
 
     /// Advance the cursor, returning a raw argument value.
     pub fn next_os(&self, cursor: &mut usize) -> Option<&OsStr> {
-        let next = self.items.get(*cursor).map(|s| s.as_os_str());
+        let next = self.items.get(*cursor).copied();
         *cursor = cursor.saturating_add(1);
         next
     }
@@ -149,26 +149,47 @@ impl RawArgs {
 
     /// Return a raw argument value.
     pub fn peek_os(&self, cursor: usize) -> Option<&OsStr> {
-        self.items.get(cursor).map(|s| s.as_os_str())
+        self.items.get(cursor).copied()
     }
 
     /// Return all remaining raw arguments, advancing the cursor to the end
     pub fn remaining(self, cursor: usize) -> Vec<OsString> {
-        self.items[cursor..].to_owned()
+        self.items[cursor..]
+            .iter()
+            .map(|x| x.to_os_string())
+            .collect()
     }
 }
 
-impl<I, T> From<I> for RawArgs
-where
-    I: IntoIterator<Item = T>,
-    T: Into<OsString>,
-{
-    fn from(val: I) -> Self {
+impl<'a> RawArgs<'a> {
+    #[doc(hidden)]
+    pub fn leaking_from(itr: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
+        let args = itr.into_iter().map(|x| x.into()).collect::<Vec<OsString>>();
+        let args = Box::leak(args.into_boxed_slice());
+        let items = args.iter().map(|x| x.as_os_str()).collect::<Vec<_>>();
+        Self { items }
+    }
+}
+
+impl<'a> FromIterator<&'a OsStr> for RawArgs<'a> {
+    fn from_iter<T: IntoIterator<Item = &'a OsStr>>(iter: T) -> Self {
         Self {
-            items: val.into_iter().map(|x| x.into()).collect(),
+            items: iter.into_iter().collect(),
         }
     }
 }
+
+// impl<I, T> From<I> for RawArgs<'a>
+// where
+//     I: IntoIterator<Item = T>,
+//     T: Into<OsString>,
+// {
+//     fn from(val: I) -> Self {
+//         Self {
+//             items: val.into_iter().map(|x| x.into()).collect(),
+//         }
+//     }
+// }
 
 /// Command-line Argument
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

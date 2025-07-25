@@ -805,7 +805,11 @@ impl Command {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let mut raw_args = clap_lex::RawArgs::from(itr);
+        let args = itr.into_iter().map(|x| x.into()).collect::<Vec<OsString>>();
+        let mut raw_args = args
+            .iter()
+            .map(|x| x.as_os_str())
+            .collect::<clap_lex::RawArgs>();
         let mut cursor = 0;
 
         if self.settings.is_set(AppSettings::Multicall)
@@ -821,7 +825,7 @@ impl Command {
             );
 
             // SAFETY: First argument is executable name, so we can change items at pos 0 instead of adding it.
-            raw_args.items[0] = command;
+            raw_args.items[0] = &command;
             cursor = 0;
             debug!(
                 "Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name"
@@ -4256,7 +4260,7 @@ impl Command {
 
     fn _do_parse(
         &mut self,
-        raw_args: clap_lex::RawArgs,
+        raw_args: clap_lex::RawArgs<'_>,
         args_cursor: usize,
     ) -> ClapResult<ArgMatches> {
         debug!("Command::_do_parse");
