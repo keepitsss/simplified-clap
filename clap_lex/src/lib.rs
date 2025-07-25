@@ -130,18 +130,6 @@ pub struct RawArgs {
 }
 
 impl RawArgs {
-    /// Deprecated
-    #[deprecated = "use RawArgs::from(std::env::args_os()) instead"]
-    pub fn from_args() -> Self {
-        unreachable!()
-    }
-
-    /// Deprecated
-    #[deprecated = "use from function instead"]
-    pub fn new(_args: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
-        unreachable!()
-    }
-
     /// Advance the cursor, returning the next [`ParsedArg`]
     pub fn next(&self, cursor: &mut usize) -> Option<ParsedArg<'_>> {
         self.next_os(cursor).map(ParsedArg::new)
@@ -165,25 +153,8 @@ impl RawArgs {
     }
 
     /// Return all remaining raw arguments, advancing the cursor to the end
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::path::PathBuf;
-    /// let raw = clap_lex::RawArgs::new(["bin", "foo.txt"]);
-    /// let mut cursor = raw.cursor();
-    /// let _bin = raw.next_os(&mut cursor);
-    ///
-    /// let mut paths = raw.remaining(&mut cursor).map(PathBuf::from).collect::<Vec<_>>();
-    /// println!("{paths:?}");
-    /// ```
     pub fn remaining(self, cursor: usize) -> Vec<OsString> {
         self.items[cursor..].to_owned()
-    }
-
-    /// Any remaining args?
-    pub fn is_end(&self, cursor: usize) -> bool {
-        self.peek_os(cursor).is_none()
     }
 }
 

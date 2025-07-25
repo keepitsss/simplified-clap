@@ -809,8 +809,8 @@ impl Command {
         let mut cursor = 0;
 
         if self.settings.is_set(AppSettings::Multicall)
-            && let Some(argv0) = raw_args.next_os(&mut cursor).map(Path::new)
-            && let Some(command) = argv0.file_stem().and_then(|f| f.to_str())
+            && let Some(argv0) = raw_args.next_os(&mut cursor)
+            && let Some(command) = Path::new(argv0).file_stem()
         {
             // Stop borrowing command so we can get another mut ref to it.
             let command = command.to_owned();
@@ -821,7 +821,7 @@ impl Command {
             );
 
             // SAFETY: First argument is executable name, so we can change items at pos 0 instead of adding it.
-            raw_args.items[0] = OsString::from(command);
+            raw_args.items[0] = command;
             cursor = 0;
             debug!(
                 "Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name"
