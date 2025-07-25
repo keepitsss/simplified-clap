@@ -816,17 +816,14 @@ impl Command {
             && let Some(argv0) = raw_args.next_os(&mut cursor)
             && let Some(command) = Path::new(argv0).file_stem()
         {
-            // Stop borrowing command so we can get another mut ref to it.
             let command = command.to_owned();
-            debug!("Command::try_get_matches_from_mut: Parsed command {command} from argv");
-
-            debug!(
-                "Command::try_get_matches_from_mut: Reinserting command into arguments so subcommand parser matches it"
-            );
-
             // SAFETY: First argument is executable name, so we can change items at pos 0 instead of adding it.
             raw_args.items[0] = &command;
             cursor = 0;
+            debug!("Command::try_get_matches_from_mut: Parsed command {command} from argv");
+            debug!(
+                "Command::try_get_matches_from_mut: Reinserting command into arguments so subcommand parser matches it"
+            );
             debug!(
                 "Command::try_get_matches_from_mut: Clearing name and bin_name so that displayed command name starts with applet name"
             );
@@ -835,13 +832,6 @@ impl Command {
             return self._do_parse(raw_args, cursor);
         };
 
-        // Get the name of the program (argument 1 of env::args()) and determine the
-        // actual file
-        // that was used to execute the program. This is because a program called
-        // ./target/release/my_prog -a
-        // will have two arguments, './target/release/my_prog', '-a' but we don't want
-        // to display
-        // the full path when displaying help messages and such
         if !self.settings.is_set(AppSettings::NoBinaryName)
             && let Some(name) = raw_args.next_os(&mut cursor)
             && let Some(f) = Path::new(name).file_name()

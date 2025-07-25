@@ -55,8 +55,9 @@
 //!         verbosity: 0,
 //!     };
 //!
-//!     let raw = clap_lex::RawArgs::new(raw);
-//!     let mut cursor = raw.cursor();
+//!     let raw_args = raw.into_iter().map(|x| x.into()).collect::<Vec<_>>();
+//!     let raw = raw_args.iter().map(|x| x.as_os_str()).collect::<RawArgs>();
+//!     let mut cursor = 0;
 //!     raw.next(&mut cursor);  // Skip the bin
 //!     while let Some(arg) = raw.next(&mut cursor) {
 //!         if arg.is_escape() {
@@ -178,18 +179,6 @@ impl<'a> FromIterator<&'a OsStr> for RawArgs<'a> {
         }
     }
 }
-
-// impl<I, T> From<I> for RawArgs<'a>
-// where
-//     I: IntoIterator<Item = T>,
-//     T: Into<OsString>,
-// {
-//     fn from(val: I) -> Self {
-//         Self {
-//             items: val.into_iter().map(|x| x.into()).collect(),
-//         }
-//     }
-// }
 
 /// Command-line Argument
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
